@@ -13,8 +13,8 @@ def api_calc():
         elif (active_score >= 2):
             api_scoreboard[active_endpoint] = active_score
     
-    for endpoint in api_scoreboard.keys():
-        print(f"\033[34m[API]\033[0m  {endpoint}")
+    for endpoint,points in api_scoreboard.items():
+        print(f"\033[34m[API]\033[0m  {endpoint} score={points}")
     # print(api_scoreboard)
         
 
