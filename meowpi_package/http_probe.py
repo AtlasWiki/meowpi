@@ -11,21 +11,13 @@ from meowpi_package.statuses import(
 )
 import httpx, time, asyncio
 from tqdm import tqdm
-from meowpi_package.utils import create_report
+# from meowpi_package.utils import create_report
 from meowpi_package.args import argparser
-from meowpi_package.shared import all_dirs, dict_report
-from meowpi_package.store_files import write_files
-
-
+from meowpi_package.utils import parse_domain, parse_dirs
+from meowpi_package.shared import all_dirs, dict_report, to_remove, to_add
+# from meowpi_package.store_files import write_files
 
 args = argparser()
-
-with open(f'{args.file}','r') as urls:
-    for line in urls:
-        all_dirs.append(line.strip('\n'))
-
-to_remove = []
-to_add = []
 
 async def fetch_dir(client, dir):
     try:
@@ -39,7 +31,7 @@ async def fetch_dir(client, dir):
         dict_report[dir]['headers'] = {}
         # get/post requests
         get_response, post_response = await client.get(dir), await client.post(dir)
-        get_location, post_location = str(get_response.url), str(post_response.url)
+        # get_location, post_location = str(get_response.url), str(post_response.url)
         get_status, post_status = str(get_response.status_code), str(post_response.status_code)
         get_file_type, post_file_type = '', ''
 
@@ -96,7 +88,7 @@ async def fetch_dir(client, dir):
 
         if (get_status_verified and post_status_verified):
             head_response, options_response = await client.head(dir), await client.options(dir)
-            head_location, options_location = str(head_response.url), str(options_response.url)
+            # head_location, options_location = str(head_response.url), str(options_response.url)
             head_status, options_status =  str(head_response.status_code),str(options_response.status_code)
             head_status_verified, options_status_verified = allowed_status_codes.get(f'{head_status}', False), allowed_status_codes.get(f'{options_status}', False)
             if not (args.stdout):

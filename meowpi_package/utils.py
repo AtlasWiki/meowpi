@@ -10,6 +10,27 @@ def clean_urls(url):
     else:
         return url
   
+def parse_domain(http_url):
+    url_pieces = http_url.split("/", 3)
+    domain = url_pieces[2]
+    domain_labels = domain.split('.')
+    return domain_labels
+    # registered_domain = domain_labels[-2] + "." + domain_labels[-1] 
+    #return registered_domain
+
+def parse_dirs(url):
+    url_pieces = url.split("/")
+    formatted_dirs = url_pieces[3::]
+
+    for dir in formatted_dirs[:]:
+        if (dir == ''):
+           formatted_dirs.remove('')
+    unformatted_dirs = formatted_dirs.copy()
+    
+    for index,value in enumerate(formatted_dirs[:]):
+        formatted_dirs[index] = "/" + value
+    return formatted_dirs,unformatted_dirs
+
 def remove_dupes(all_dirs):
     all_dirs[:] = list(dict.fromkeys(all_dirs))
 
