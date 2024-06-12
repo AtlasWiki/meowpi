@@ -1,5 +1,6 @@
 from meowpi_package.shared import dict_report
 from meowpi_package.statuses import http_status_codes
+
 def clean_urls(url):
     if(url[:4] == "http"):    
         return url
@@ -9,12 +10,6 @@ def clean_urls(url):
     else:
         return url
   
-def parse_domain(http_url):
-    url_pieces = http_url.split("/", 3)
-    domain_labels = url_pieces[2].split(".")
-    registered_domain = domain_labels[-2] + "." + domain_labels[-1] 
-    return registered_domain
-
 def remove_dupes(all_dirs):
     all_dirs[:] = list(dict.fromkeys(all_dirs))
 

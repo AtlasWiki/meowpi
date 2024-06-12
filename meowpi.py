@@ -18,6 +18,7 @@ intro_logo = f"""\033[35m
 
 
 if __name__ == "__main__":
-    argparser()
-    print(intro_logo)
+    args = argparser()
+    if not (args.stdout):
+        print(intro_logo)
     asyncio.run(filter_urls())

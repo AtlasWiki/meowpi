@@ -31,7 +31,7 @@ def argparser():
     parser.add_argument("-m", "--mode", help="filter modes", choices=['all', '1xx', '2xx', '3xx', '4xx', '5xx', 'forbidden'])
     parser.add_argument("--no-api", help="disables api filtering and switches to regular http probing", action="store_true")
     parser.add_argument("-n", "--no-logo", help="hides logo", action="store_true")
-    parser.add_argument("-r", "--requests", help="the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 12 req/sec (without specifying) which would be actually 24)", type=int, default=12)
+    parser.add_argument("-r", "--requests", help="the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 15 req/sec (without specifying) which would be actually 30)", type=int, default=15)
     parser.add_argument("--scope", help="specify domain names for file extraction. Extract js files from the domain(s), Ex: google.com", nargs="*")
     parser.add_argument("-j", "--json-report", help="json report/summary of all urls", action="store_true")
 

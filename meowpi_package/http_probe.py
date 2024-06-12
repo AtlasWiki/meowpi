@@ -11,9 +11,10 @@ from meowpi_package.statuses import(
 )
 import httpx, time, asyncio
 from tqdm import tqdm
-from meowpi_package.utils import parse_domain, create_report
+from meowpi_package.utils import create_report
 from meowpi_package.args import argparser
 from meowpi_package.shared import all_dirs, dict_report
+from meowpi_package.store_files import write_files
 
 
 
@@ -107,80 +108,80 @@ async def fetch_dir(client, dir):
 
             if (head_status_verified and options_status_verified):
                 if (not args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location)
-                    create_report(dir, 'HEAD', head_status, head_location)
-                    create_report(dir, 'OPTIONS', options_status, options_location)
+                    # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
+                    # create_report(dir, 'POST', post_status, post_location)
+                    # create_report(dir, 'HEAD', head_status, head_location)
+                    # create_report(dir, 'OPTIONS', options_status, options_location)
                     tqdm.write(f'{options_head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
                 elif not (args.stdout):
                     tqdm.write(f'{options_head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                elif (args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location)
-                    create_report(dir, 'HEAD', head_status, head_location)
-                    create_report(dir, 'OPTIONS', options_status, options_location)
+                # elif (args.stdout and args.json_report):
+                    # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
+                    # create_report(dir, 'POST', post_status, post_location)
+                    # create_report(dir, 'HEAD', head_status, head_location)
+                    # create_report(dir, 'OPTIONS', options_status, options_location)
 
             elif (head_status_verified):
                 if (not args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location)
-                    create_report(dir, 'HEAD', head_status, head_location)
+                    # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
+                    # create_report(dir, 'POST', post_status, post_location)
+                    # create_report(dir, 'HEAD', head_status, head_location)
                     tqdm.write(f'{head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
                 elif not (args.stdout):
                     tqdm.write(f'{head_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                elif (args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location)
-                    create_report(dir, 'HEAD', head_status, head_location)
+                # elif (args.stdout and args.json_report):
+                    # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
+                    # create_report(dir, 'POST', post_status, post_location)
+                    # create_report(dir, 'HEAD', head_status, head_location)
                     
             elif (options_status_verified):
                 if (not args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location)
-                    create_report(dir, 'HEAD', head_status, head_location)
+                    # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
+                    # create_report(dir, 'POST', post_status, post_location)
+                    # create_report(dir, 'HEAD', head_status, head_location)
                     tqdm.write(f'{options_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
                 elif not (args.stdout):
                     tqdm.write(f'{options_status_full_message_others} \033[34m[{get_file_type}]\033[0m  {dir}')
-                elif (args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location)
-                    create_report(dir, 'HEAD', head_status, head_location)
+                # elif (args.stdout and args.json_report):
+                    # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
+                    # create_report(dir, 'POST', post_status, post_location)
+                    # create_report(dir, 'HEAD', head_status, head_location)
     
             else:
                 if (not args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location, post_file_type)
+                    # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
+                    # create_report(dir, 'POST', post_status, post_location, post_file_type)
                     tqdm.write(f'{get_and_post_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
                 elif not (args.stdout):
                     tqdm.write(f'{get_and_post_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
-                elif (args.stdout and args.json_report):
-                    create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                    create_report(dir, 'POST', post_status, post_location, post_file_type)
+                # elif (args.stdout and args.json_report):
+                    # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
+                    # create_report(dir, 'POST', post_status, post_location, post_file_type)
 
         elif(get_status_verified):
             if (not args.stdout and args.json_report):
-                create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
+                # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
                 tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
             elif not (args.stdout):
                 tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
-            elif (args.stdout and args.json_report):
-                create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
+            # elif (args.stdout and args.json_report):
+                # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
 
         elif(post_status_verified):
             if (not args.stdout and args.json_report):
-                create_report(dir, 'POST', post_status, post_location, headers = post_response.headers)
+                # create_report(dir, 'POST', post_status, post_location, headers = post_response.headers)
                 tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
             elif not (args.stdout):
                 tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
-            elif (args.stdout and args.json_report):
-                create_report(dir, 'POST', post_status, post_location, headers = post_response.headers)
+            # elif (args.stdout and args.json_report):
+                # create_report(dir, 'POST', post_status, post_location, headers = post_response.headers)
         
         elif (verified_three_codes_get or verified_three_codes_post): 
             get_3xx_response = await client.get((dir), follow_redirects=True)
             colored_3xx_response = str(colored_status_codes.get(str(get_3xx_response.status_code)[0]))
             get_3xx_response_verified = allowed_status_codes.get(f'{get_3xx_response.status_code}', False)
-            create_report(dir, 'GET', get_status, get_3xx_response.url, headers = post_response.headers)
-            create_report(dir, 'POST', get_status, get_location, headers = post_response.headers)
+            # create_report(dir, 'GET', get_status, get_3xx_response.url, headers = post_response.headers)
+            # create_report(dir, 'POST', get_status, get_location, headers = post_response.headers)
             if (get_3xx_response_verified):
                 to_add.append(dir)
             else:
@@ -192,8 +193,8 @@ async def fetch_dir(client, dir):
                 if not (args.stdout):
                     tqdm.write(f'{get_and_post_full_error_message} {dir}')
               
-                create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
-                create_report(dir, 'POST', post_status, post_location)
+                # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
+                # create_report(dir, 'POST', post_status, post_location)
 
             if dir[0] != "/" or dir[0] == "/":
                 to_remove.append(dir)
@@ -255,3 +256,5 @@ async def filter_urls():
         all_dirs.remove(dirs)
     for dirs in to_add:
         all_dirs.append(dirs)
+    # if (args.merge or args.json_report):
+    #     write_files()
