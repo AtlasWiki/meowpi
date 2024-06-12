@@ -68,7 +68,7 @@ blocked_status_codes = {
 }
 
 colored_status_codes = {
-    '1': '\033[93m', # dark green
+    '1': '\033[93m', # orange
     '2': '\033[32m', # green
     '3': '\033[33m', # sandy brown
     '4': '\033[34m', # cyan 2

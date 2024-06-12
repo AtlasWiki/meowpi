@@ -4,3 +4,7 @@ target= {}
 dict_report = {}
 to_remove = []
 to_add = []
+api_active_scoreboard = {}
+api_passive_scoreboard = {}
+api_scoreboard = {}
+api_score = 0

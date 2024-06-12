@@ -25,10 +25,15 @@ def parse_dirs(url):
     for dir in formatted_dirs[:]:
         if (dir == ''):
            formatted_dirs.remove('')
+
     unformatted_dirs = formatted_dirs.copy()
     
+    for index,value in enumerate(unformatted_dirs[:]):
+        unformatted_dirs[index] = value.lower()
+
     for index,value in enumerate(formatted_dirs[:]):
-        formatted_dirs[index] = "/" + value
+        formatted_dirs[index] = "/" + value.lower()
+        
     return formatted_dirs,unformatted_dirs
 
 def remove_dupes(all_dirs):
