@@ -1,6 +1,5 @@
 from meowpi_package.shared import api_active_scoreboard, api_passive_scoreboard, api_scoreboard, api_score
 
-
 def api_calc():
     print("""\n\n
 █▀ ▄▀█ █▀█ █   █▀▀ █▄░█ █▀▄ █▀█ █▀█ █ █▄░█ ▀█▀ █▀ ▀█
@@ -14,7 +13,10 @@ def api_calc():
             api_scoreboard[active_endpoint] = active_score
     
     for endpoint,points in api_scoreboard.items():
-        print(f"\033[34m[API]\033[0m  {endpoint} score={points}")
+        if (points == 2):
+            print(f"\033[34m[POSSIBLE API]\033[0m  {endpoint}")
+        else:
+            print(f"\033[34m[API]\033[0m  {endpoint}")
     # print(api_scoreboard)
         
 
