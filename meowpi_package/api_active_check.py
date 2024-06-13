@@ -106,7 +106,7 @@ async def fetch_dir(client, dir):
                 options_head_status_full_message_others = head_status_full_message_others + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
 
             if (head_status_verified and options_status_verified):
-                if (not args.stdout and args.json_report):
+                if (not args.stdout):
                     # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
                     # create_report(dir, 'POST', post_status, post_location)
                     # create_report(dir, 'HEAD', head_status, head_location)
@@ -125,7 +125,7 @@ async def fetch_dir(client, dir):
                     # create_report(dir, 'OPTIONS', options_status, options_location)
 
             elif (head_status_verified):
-                if (not args.stdout and args.json_report):
+                if (not args.stdout):
                     # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
                     # create_report(dir, 'POST', post_status, post_location)
                     # create_report(dir, 'HEAD', head_status, head_location)
@@ -141,7 +141,7 @@ async def fetch_dir(client, dir):
                 api_score += 3
                 # api_update_score(dir, api_score + 3)
             elif (options_status_verified):
-                if (not args.stdout and args.json_report):
+                if (not args.stdout):
                     # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
                     # create_report(dir, 'POST', post_status, post_location)
                     # create_report(dir, 'HEAD', head_status, head_location)
@@ -157,7 +157,7 @@ async def fetch_dir(client, dir):
                 api_score += 3
                 # api_update_score(dir, api_score + 3)
             else:
-                if (not args.stdout and args.json_report):
+                if (not args.stdout):
                     # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
                     # create_report(dir, 'POST', post_status, post_location, post_file_type)
                     tqdm.write(f'{get_and_post_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
@@ -170,7 +170,7 @@ async def fetch_dir(client, dir):
                 # api_update_score(dir, api_score + 2)
 
         elif(get_status_verified):
-            if (not args.stdout and args.json_report):
+            if (not args.stdout):
                 # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
                 
                 tqdm.write(f'{get_status_full_message} \033[34m[{get_file_type}]\033[0m  {dir}')
@@ -182,7 +182,7 @@ async def fetch_dir(client, dir):
                 # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
 
         elif(post_status_verified):
-            if (not args.stdout and args.json_report):
+            if (not args.stdout):
                 # create_report(dir, 'POST', post_status, post_location, headers = post_response.headers)
                 
                 tqdm.write(f'{post_status_full_message} \033[34m[{post_file_type}]\033[0m  {dir}')
