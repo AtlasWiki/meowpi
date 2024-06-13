@@ -3,11 +3,13 @@ from meowpi_package.shared import all_dirs
 from meowpi_package.api_determine import api_calc, api_update_passive_score
 from meowpi_package.api_wordlist import api_keywords, api_paths
 from meowpi_package.args import argparser
+import time 
 
 args = argparser()
 
 def api_pass_check():
     # try:
+        start_time = time.time()
         if not (args.active):
             print("""\n
 █▀ █▀█ ▄▀█ █▀ █▀ █ █░█ █▀▀   █▀▀ █░█ █▀▀ █▀▀ █▄▀ ▀█
@@ -38,3 +40,8 @@ def api_pass_check():
     # except Exception as e:
     #     print(f'Error: {e}')
         api_calc()
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        if (args.passive):
+            print("")
+            print(f"Time Taken: {elapsed_time:.2f} seconds\n")
