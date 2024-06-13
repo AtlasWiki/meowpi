@@ -13,7 +13,7 @@ def api_calc():
             api_scoreboard[active_endpoint] = active_score
     
     for endpoint,points in api_scoreboard.items():
-        if (points == 2 or points == 1.5):
+        if (points <= 2):
             print(f"\033[34m[POSSIBLE API]\033[0m  {endpoint}")
             # print(f"\033[34m[POSSIBLE API]\033[0m  {endpoint}  [score={points}]")
         else:
