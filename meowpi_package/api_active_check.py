@@ -230,19 +230,6 @@ async def fetch_dir(client, dir):
                 head_status_full_message_others = get_and_post_full_message + f"{head_status_color}[{head_status_colored_message}][HEAD]{reset_color} "
                 options_status_full_message_others = get_and_post_full_message + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
                 options_head_status_full_message_others = head_status_full_message_others + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
-            
-                # if (args.mode=='1xx'):
-                #     head_status_verified, options_status_verified = one_x_x_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
-                # elif (args.mode=='2xx'):
-                #     head_status_verified, options_status_verified = two_x_x_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
-                # elif (args.mode=='3xx'):
-                #     head_status_verified, options_status_verified = three_x_x_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
-                # elif (args.mode == '4xx'):
-                #     head_status_verified, options_status_verified = four_x_x_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
-                # elif (args.mode == '5xx'):
-                #     head_status_verified, options_status_verified = five_x_x_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
-                # elif (args.mode=='forbidden'):
-                #     head_status_verified, options_status_verified = forbidden_x_x_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
 
                 if (head_status_verified and options_status_verified):
                     tqdm.write(f'{options_head_status_full_message_others} \033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
