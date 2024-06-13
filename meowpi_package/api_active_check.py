@@ -16,7 +16,7 @@ from tqdm import tqdm
 from meowpi_package.args import argparser
 from meowpi_package.utils import parse_domain, parse_dirs
 from meowpi_package.shared import all_dirs, dict_report, to_remove, to_add, api_score
-from meowpi_package.api_determine import api_update_score
+from meowpi_package.api_determine import api_update_active_score
 # from meowpi_package.store_files import write_files
 
 args = argparser()
@@ -192,8 +192,7 @@ async def fetch_dir(client, dir):
             # api_update_score(dir, 1)
             # elif (args.stdout and args.json_report):
                 # create_report(dir, 'POST', post_status, post_location, headers = post_response.headers)
-        
-        elif (verified_three_codes_get or verified_three_codes_post): 
+        elif (verified_three_codes_get or verified_three_codes_post):
             get_3xx_response = await client.get((dir), follow_redirects=True)
             post_3xx_response = await client.post((dir), follow_redirects=True)
             colored_3xx_response = str(colored_status_codes.get(str(get_3xx_response.status_code)[0]))
@@ -201,6 +200,25 @@ async def fetch_dir(client, dir):
             post_3xx_response_verified = allowed_status_codes.get(f'{post_3xx_response.status_code}', False)
             # create_report(dir, 'GET', get_status, get_3xx_response.url, headers = post_response.headers)
             # create_report(dir, 'POST', get_status, get_location, headers = post_response.headers)
+            if (args.mode=='1xx'):
+                get_3xx_response_verified = one_x_x_codes.get(f'{get_3xx_response.status_code}', False)
+                post_3xx_response_verified = one_x_x_codes.get(f'{post_3xx_response.status_code}', False)
+            elif (args.mode=='2xx'):
+                get_3xx_response_verified = two_x_x_codes.get(f'{get_3xx_response.status_code}', False)
+                post_3xx_response_verified = two_x_x_codes.get(f'{post_3xx_response.status_code}', False)
+            elif (args.mode=='3xx'):
+                get_3xx_response_verified = three_x_x_codes.get(f'{get_3xx_response.status_code}', False)
+                post_3xx_response_verified = three_x_x_codes.get(f'{post_3xx_response.status_code}', False)
+            elif (args.mode == '4xx'):
+                get_3xx_response_verified = four_x_x_codes.get(f'{get_3xx_response.status_code}', False)
+                post_3xx_response_verified = four_x_x_codes.get(f'{post_3xx_response.status_code}', False)
+            elif (args.mode == '5xx'):
+                get_3xx_response_verified = five_x_x_codes.get(f'{get_3xx_response.status_code}', False)
+                post_3xx_response_verified = five_x_x_codes.get(f'{post_3xx_response.status_code}', False)
+            elif (args.mode=='forbidden'):
+                get_3xx_response_verified = forbidden_x_x_codes.get(f'{get_3xx_response.status_code}', False)
+                post_3xx_response_verified = forbidden_x_x_codes.get(f'{post_3xx_response.status_code}', False)
+
             if (get_3xx_response_verified or post_3xx_response_verified):
                 to_add.append(dir)
                 head_response, options_response = await client.head(dir), await client.options(dir)
@@ -213,6 +231,19 @@ async def fetch_dir(client, dir):
                 options_status_full_message_others = get_and_post_full_message + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
                 options_head_status_full_message_others = head_status_full_message_others + f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} "
             
+                # if (args.mode=='1xx'):
+                #     head_status_verified, options_status_verified = one_x_x_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
+                # elif (args.mode=='2xx'):
+                #     head_status_verified, options_status_verified = two_x_x_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
+                # elif (args.mode=='3xx'):
+                #     head_status_verified, options_status_verified = three_x_x_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
+                # elif (args.mode == '4xx'):
+                #     head_status_verified, options_status_verified = four_x_x_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
+                # elif (args.mode == '5xx'):
+                #     head_status_verified, options_status_verified = five_x_x_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
+                # elif (args.mode=='forbidden'):
+                #     head_status_verified, options_status_verified = forbidden_x_x_codes.get(f'{head_status}', False), http_status_codes.get(f'{options_status}', False)
+
                 if (head_status_verified and options_status_verified):
                     tqdm.write(f'{options_head_status_full_message_others} \033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
                     api_score += 4
@@ -225,11 +256,14 @@ async def fetch_dir(client, dir):
                     tqdm.write(f'{options_status_full_message_others} \033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
                     api_score += 3
                 
-                else:
-                    tqdm.write(f'{get_and_post_full_error_message} \033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
-                    api_score += 2
+                elif(get_status_verified):
+                    tqdm.write(f'{get_status_full_message} \033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
+                    api_score += 1
+
+                elif(post_status_verified):
+                    tqdm.write(f'{post_status_full_message} \033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
+                    api_score += 1
             else:
-                tqdm.write(f'{get_and_post_full_error_message} \033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}] {reset_color}{dir}')
                 to_remove.append(dir)
              
            
@@ -240,16 +274,17 @@ async def fetch_dir(client, dir):
             if not (args.stdout):
                 # api_score += 1
                 # api_update_score(dir, 1)
-                tqdm.write(f'{get_and_post_full_error_message} {dir}')
+                if not (args.mode):
+                    tqdm.write(f'{get_and_post_full_error_message} {dir}')
               
                 # create_report(dir, 'GET', get_status, get_location, headers = get_response.headers)
                 # create_report(dir, 'POST', post_status, post_location)
 
-            if dir[0] != "/" or dir[0] == "/":
-                to_remove.append(dir)
-        api_update_score(dir, api_score)
+                if dir[0] != "/" or dir[0] == "/":
+                    to_remove.append(dir)
+        api_update_active_score(dir, api_score)
     except Exception as e:
-        tqdm.write(f"Error processing {dir}: {e}") # for error checking
+        # tqdm.write(f"Error processing {dir}: {e}") # for error checking
         to_remove.append(dir)
 
 

@@ -26,5 +26,7 @@ if __name__ == "__main__":
             all_dirs.append(line.strip('\n'))
     if not (args.stdout):
         print(intro_logo)
-    asyncio.run(api_act_check())
-    api_pass_check()
+    if not (args.passive):
+        asyncio.run(api_act_check())
+    if not (args.no_api_check):
+        api_pass_check()

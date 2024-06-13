@@ -11,10 +11,14 @@ def clean_urls(url):
         return url
   
 def parse_domain(http_url):
-    url_pieces = http_url.split("/", 3)
-    domain = url_pieces[2]
-    domain_labels = domain.split('.')
-    return domain_labels
+    try:
+        url_pieces = http_url.split("/", 3)
+        domain = url_pieces[2]
+        domain_labels = domain.split('.')
+        return domain_labels
+    except Exception:
+        return http_url
+  
     # registered_domain = domain_labels[-2] + "." + domain_labels[-1] 
     #return registered_domain
 
