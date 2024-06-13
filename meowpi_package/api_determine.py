@@ -9,14 +9,16 @@ def api_calc():
         active_endpoint_verified = api_passive_scoreboard.get(active_endpoint, False)
         if (active_endpoint_verified):
             api_scoreboard[active_endpoint] = active_score + active_endpoint_verified
-        elif (active_score >= 2):
+        elif (active_score >= 1.5):
             api_scoreboard[active_endpoint] = active_score
     
     for endpoint,points in api_scoreboard.items():
-        if (points == 2):
+        if (points == 2 or points == 1.5):
             print(f"\033[34m[POSSIBLE API]\033[0m  {endpoint}")
+            # print(f"\033[34m[POSSIBLE API]\033[0m  {endpoint}  [score={points}]")
         else:
             print(f"\033[34m[API]\033[0m  {endpoint}")
+            # print(f"\033[34m[API]\033[0m  {endpoint}  [score={points}]")
     # print(api_scoreboard)
         
 
