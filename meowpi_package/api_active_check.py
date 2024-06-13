@@ -41,14 +41,14 @@ async def fetch_dir(client, dir):
         try:
             get_file_type = get_response.headers.get("Content-Type").split(';')[0]
             if (get_file_type == "application/json"):
-                api_score += 0.5
+                api_score += 0.2
         except: 
             get_file_type = get_response.headers.get("Content-Type")
 
         try:
             post_file_type = post_response.headers.get("Content-Type").split(';')[0]
             if (get_file_type == "application/json"):
-                api_score += 0.5
+                api_score += 0.2
         except: 
             post_file_type = post_response.headers.get("Content-Type")
             
