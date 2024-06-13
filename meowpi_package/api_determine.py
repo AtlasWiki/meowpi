@@ -20,11 +20,12 @@ def api_calc():
             print(f"\033[34m[API] \033[95m[multi-method]\033[0m  {endpoint}")
         elif (active_points >= 2 and passive_points >= 0):
             print(f"\033[34m[API] \033[32m[bi-method]\033[0m  {endpoint}")
-        elif (active_points < 2 and passive_points >= 0):
+        elif (active_points < 2 and passive_points >= 2):
+            print(f"\033[34m[API] \033[31m[single-method]\033[0m  {endpoint}")
+        else:
             print(f"\033[34m[POSSIBLE API] \033[31m[single-method]\033[0m  {endpoint}")
-        
             
-          
+    print(f' APIs Found: {len(api_scoreboard.keys())}')
         
 
 def api_update_score(url, points): # active
