@@ -9,6 +9,7 @@
 ## Key Features:
 + **Stdout-Friendly:** basic printing of only urls to stdout.
 + **Fast HTTP Probing**: uses concurrent requests and allow you to optionally set the requests per sec.
++ **Filtering modes**: comes with filtering of status codes when doing http probing.
 + **Active Checking**: uses HTTP Probing to do active checks for single/multi-method APIs.
 + **Passive Checking**: uses API keywords and api paths on the url to determine the API endpoints.
 <br>
