@@ -4,7 +4,8 @@ from meowpi_package.args import argparser
 args = argparser()
 
 def api_calc():
-    print("""\n\n
+    if not (args.stdout):
+        print("""\n\n
 █▀ ▄▀█ █▀█ █   █▀▀ █▄░█ █▀▄ █▀█ █▀█ █ █▄░█ ▀█▀ █▀ ▀█
 █▄ █▀█ █▀▀ █   ██▄ █░▀█ █▄▀ █▀▀ █▄█ █ █░▀█ ░█░ ▄█ ▄█\n""")
     
@@ -23,24 +24,43 @@ def api_calc():
             if (args.active):
                 passive_points = 100
             if (active_points >= 3 and passive_points >= 0):
-                print(f"\033[34m[API] \033[95m[multi-method]\033[0m  {endpoint}")
+                if not (args.stdout):
+                    print(f"\033[34m[API] \033[95m[multi-method]\033[0m  {endpoint}")
+                else:
+                    print(endpoint)
             elif (active_points >= 2 and passive_points >= 0):
-                print(f"\033[34m[API] \033[32m[bi-method]\033[0m  {endpoint}")
+                if not (args.stdout):
+                    print(f"\033[34m[API] \033[32m[bi-method]\033[0m  {endpoint}")
+                else:
+                    print(endpoint)
             elif (active_points < 2 and passive_points >= 2):
-                print(f"\033[34m[API] \033[31m[single-method]\033[0m  {endpoint}")
+                if not (args.stdout):
+                    print(f"\033[34m[API] \033[31m[single-method]\033[0m  {endpoint}")
+                else:
+                    print(endpoint)
             else:
-                print(f"\033[34m[POSSIBLE API] \033[31m[single-method]\033[0m  {endpoint}")
+                if not (args.stdout):
+                    print(f"\033[34m[POSSIBLE API] \033[31m[single-method]\033[0m  {endpoint}")
+                else:
+                    print(endpoint)
 
     if (args.passive):
         for endpoint,points in api_passive_scoreboard.items():
             
             if (points == 1):
-                print(f"\033[34m[POSSIBLE API]\033[0m  {endpoint}")
+                if not (args.stdout):
+                    print(f"\033[34m[POSSIBLE API]\033[0m  {endpoint}")
+                else:
+                    print(endpoint)
                 api_scoreboard[endpoint] = points
             elif (points > 1):
-                print(f"\033[34m[API]\033[0m  {endpoint}")
+                if not (args.stdout):
+                    print(f"\033[34m[API]\033[0m  {endpoint}")
+                else:
+                    print(endpoint)
                 api_scoreboard[endpoint] = points
-
+                
+if not (args.stdout):
     print(f' APIs Found: {len(api_scoreboard.keys())}')
 
   

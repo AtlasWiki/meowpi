@@ -19,7 +19,7 @@ def argparser():
     class NewlineFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
         pass
 
-    parser = argparse.ArgumentParser(prog= f"python {get_py_filename}", description='\u001b[96mdescription: verifies and filters API urls', epilog=
+    parser = argparse.ArgumentParser(prog= f"python {get_py_filename}", description='\u001b[96mdescription: verifies and filters API urls passively and actively by default', epilog=
     f'''
     \u001b[91mbasic usage:\u001b[0m python {get_py_filename } urls.txt
     \u001b[91mfilter requests:\u001b[0m python {get_py_filename } urls.txt -m
@@ -32,9 +32,7 @@ def argparser():
     parser.add_argument("-p", "--passive", help="enables passive API filtering only and disables active API probing", action="store_true")
     parser.add_argument("-a", "--active", help="enables active API probing and disables passive API filtering", action="store_true")
     parser.add_argument("--no-api-check", help="uses only http probing and no api checks", action="store_true")
-    # parser.add_argument("-n", "--no-logo", help="hides logo", action="store_true")
     parser.add_argument("-r", "--requests", help="the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 15 req/sec (without specifying) which would be actually 30)", type=int, default=15)
-    # parser.add_argument("--scope", help="specify domain names for file extraction. Extract js files from the domain(s), Ex: google.com", nargs="*")
-
+    
     args = parser.parse_args()
     return args

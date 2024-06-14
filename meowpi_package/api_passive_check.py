@@ -11,7 +11,8 @@ def api_pass_check():
     # try:
         start_time = time.time()
         if not (args.active):
-            print("""\n
+            if not (args.stdout):
+                print("""\n
 █▀ █▀█ ▄▀█ █▀ █▀ █ █░█ █▀▀   █▀▀ █░█ █▀▀ █▀▀ █▄▀ ▀█
 █▄ █▀▀ █▀█ ▄█ ▄█ █ ▀▄▀ ██▄   █▄▄ █▀█ ██▄ █▄▄ █░█ ▄█\n""")
             for url in all_dirs[:]:
@@ -22,18 +23,21 @@ def api_pass_check():
                     for keyword in api_keywords:
                         if keyword in dir.lower():
                             api_score += 1
-                            print(f"\033[32m[HIT]\033[0m  {url}  \033[31m[TRIGGER: {keyword}]\033[0m")
+                            if not (args.stdout):
+                                print(f"\033[32m[HIT]\033[0m  {url}  \033[31m[TRIGGER: {keyword}]\033[0m")
 
                 for dir in formatted_dirs:
                     if api_paths.get(dir.lower(), False):
-                        print(f"\033[32m[HIT]\033[0m  {url}  \033[31m[TRIGGER: {api_paths.get(dir.lower(), False)}]\033[0m")
+                        if not (args.stdout):
+                            print(f"\033[32m[HIT]\033[0m  {url}  \033[31m[TRIGGER: {api_paths.get(dir.lower(), False)}]\033[0m")
                         api_score += 1
                 
                 # # domain checking
                 for domain in parse_domain(url):
                     for keyword in api_keywords:
                         if keyword in domain.lower():
-                            print(f"\033[32m[HIT]\033[0m  {url}  \033[31m[TRIGGER: {keyword}]\033[0m")
+                            if not (args.stdout):
+                                print(f"\033[32m[HIT]\033[0m  {url}  \033[31m[TRIGGER: {keyword}]\033[0m")
                             api_score += 1
                         
                 api_update_passive_score(url, api_score)
@@ -42,6 +46,6 @@ def api_pass_check():
         api_calc()
         end_time = time.time()
         elapsed_time = end_time - start_time
-        if (args.passive):
+        if (args.passive and not args.stdout):
             print("")
             print(f"Time Taken: {elapsed_time:.2f} seconds\n")
