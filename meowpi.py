@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from meowpi_package.args import argparser
 from meowpi_package.api_active_check import api_act_check
 from meowpi_package.shared import all_dirs
