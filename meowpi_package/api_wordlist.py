@@ -1,11 +1,12 @@
 api_keywords= [
-    "api", "v1", "auth", "rest", "swagger", "submit", 
+    "api", "v1", "auth", "swagger", "submit", 
     "report", "user", "graphql", "v2", "authentication", "update", 
     "comment", "verify", "apply", "change", "download", "write",
     "account", "report", "order", "oauth", "preference", "notification",
     "catalog", "password", "alert", "category", "balance", "channel",
     "buy", "sell", "card", "challenge", "wallet", "product",
-    "tag", "inventory", "payment", "ticket"
+    "tag", "inventory", "payment", "ticket", "message", "article",
+    "book", "cart"
     ]
 api_paths = {
     "/login":"/login",
@@ -17,6 +18,8 @@ api_paths = {
     "/settings":"/settings",
     "/logs":"/logs",
     "/bills":"/bills",
-    "/billing":"/billing"
+    "/billing":"/billing",
+    "./rest":"./rest",
+    "/rest": "/rest"
 
 }
