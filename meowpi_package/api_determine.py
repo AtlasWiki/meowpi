@@ -60,8 +60,8 @@ def api_calc():
                     print(endpoint)
                 api_scoreboard[endpoint] = points
                 
-if not (args.stdout):
-    print(f' APIs Found: {len(api_scoreboard.keys())}')
+    if not (args.stdout):
+        print(f' APIs Found: {len(api_scoreboard.keys())}')
 
   
 def api_update_active_score(url, points):
