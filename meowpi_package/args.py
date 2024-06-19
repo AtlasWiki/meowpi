@@ -26,7 +26,7 @@ def argparser():
     \u001b[91mstdout:\u001b[0m python {get_py_filename } urls.txt -S   
     ''', formatter_class=NewlineFormatter, usage=f'{intro_logo}\n\u001b[32m%(prog)s [options] file_name\u001b[0m')
 
-    parser.add_argument("file", help="\u001b[96mspecify file/list of urls")
+    parser.add_argument("-f, --file", help="\u001b[96mspecify file/list of urls")
     parser.add_argument("-s", "--stdout", help="stdout friendly, displays urls only in stdout compatibility. also known as silent mode", action="store_true")
     parser.add_argument("-m", "--mode", help="filter modes", choices=['all', '1xx', '2xx', '3xx', '4xx', '5xx', 'forbidden'])
     parser.add_argument("-p", "--passive", help="enables passive API filtering only and disables active API probing", action="store_true")
