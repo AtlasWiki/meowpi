@@ -28,12 +28,12 @@ pip install -r requirements.txt
 run the file:
 + python:
 ```
-python meowpi.py -f all_urls.txt
+python meowpi.py all_urls.txt
 ```
 or
 + linux:
 ```
-./meowpi.py -f all_urls.txt
+./meowpi.py all_urls.txt
 ```
 
 
@@ -53,7 +53,7 @@ or
 ## Some Example Usages:
 basic usage:
 ```
-python meowpi.py -f all_urls.txt
+python meowpi.py all_urls.txt
 ```
 <img width="1200" alt="image" src="https://github.com/AtlasWiki/meowpi/assets/87085506/42cfd6b4-b5ae-4f7d-a4e5-b217513f1543">
 <img width="1200" alt="image" src="https://github.com/AtlasWiki/meowpi/assets/87085506/c0a24715-5fae-43cf-a285-4e25ef8c8cd5">
@@ -64,7 +64,7 @@ python meowpi.py -f all_urls.txt
 
 Active Check Only: 
 ```
-python meowpi.py -f all_urls.txt --active
+python meowpi.py all_urls.txt --active
 ```
 <img width="1200" alt="image" src="https://github.com/AtlasWiki/meowpi/assets/87085506/6fdfbd25-16f5-47e6-b07f-df141426c5f8">
 
@@ -77,7 +77,7 @@ python meowpi.py -f all_urls.txt --active
 Passive Check Only: 
 
 ```
-python meowpi.py -f all_urls.txt --passive
+python meowpi.py all_urls.txt --passive
 ```
 <img width="1200" alt="image" src="https://github.com/AtlasWiki/meowpi/assets/87085506/618fcdaa-1db6-4818-90e1-916587808655">
 
