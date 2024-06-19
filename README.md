@@ -40,14 +40,18 @@ or
 ## Options:
 ```
 -h, --help            show this help message and exit
+-f FILE, --file FILE  specify file/list of urls (default: None)
 -s, --stdout          stdout friendly, displays urls only in stdout compatibility. also known as silent mode (default: False)
 -m {all,1xx,2xx,3xx,4xx,5xx,forbidden}, --mode {all,1xx,2xx,3xx,4xx,5xx,forbidden}
                       filter modes (default: None)
 -p, --passive         enables passive API filtering only and disables active API probing (default: False)
 -a, --active          enables active API probing and disables passive API filtering (default: False)
 --no-api-check        uses only http probing and no api checks (default: False)
+-j {all,no-http-headers}, --json-report {all,no-http-headers}
+                      output a file in json to show a report of all endpoints (default: None)
 -r REQUESTS, --requests REQUESTS
-                      the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 15 req/sec (without specifying) which would be actually 30) (default: 15)  
+                      the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 15 req/sec (without specifying)      
+                      which would be actually 30) (default: 15)
 ```
 
 ## Some Example Usages:
