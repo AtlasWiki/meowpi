@@ -22,13 +22,13 @@ intro_logo = f"""\033[35m
 
 if __name__ == "__main__":
     args = argparser()
-    # try:
-    with open(f'{args.file}','r') as urls:
-        for line in urls:
-            all_dirs.append(line.strip('\n'))
-    # except Exception:
-    #     for url in sys.stdin:
-    #         all_dirs.append(url.strip("\n"))
+    try:
+        with open(f'{args.file}','r') as urls:
+            for line in urls:
+                all_dirs.append(line.strip('\n'))
+    except Exception:
+        for url in sys.stdin:
+            all_dirs.append(url.strip("\n"))
 
     if not (args.stdout):
         print(intro_logo)
