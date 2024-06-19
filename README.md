@@ -12,6 +12,7 @@
 + **Filtering modes**: comes with filtering of status codes when doing http probing.
 + **Active Checking**: uses HTTP Probing to do active checks for single/multi-method APIs.
 + **Passive Checking**: uses API keywords and api paths on the url to determine the API endpoints.
++ **Piping Support**: accepts stdin input and can be piped to the tool. (Ex: cat urls.txt | python meopi.py)
 <br>
 
 ## Installation:
