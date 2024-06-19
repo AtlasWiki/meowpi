@@ -66,7 +66,8 @@ Active Check Only:
 ```
 python meowpi.py all_urls.txt --active
 ```
-<img width="1200" alt="image" src="https://github.com/AtlasWiki/meowpi/assets/87085506/b6e48fdf-a35d-48b4-8466-6bc4aaeadaa0">
+<img width="1200" alt="image" src="https://github.com/AtlasWiki/meowpi/assets/87085506/6fdfbd25-16f5-47e6-b07f-df141426c5f8">
+
 
 
 
