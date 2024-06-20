@@ -26,7 +26,10 @@ if __name__ == "__main__":
         with open(f'{args.file}','r') as urls:
             for line in urls:
                 all_dirs.append(line.strip('\n'))
-    except Exception:
+    except:
+        if not (args.stdout):
+            print(intro_logo)
+            print("If stuck hanging press CTRL + D or CTRL + Z or even CTRL + C. This likely happens due to empty stdin/input")
         for url in sys.stdin:
             all_dirs.append(url.strip("\n"))
 
