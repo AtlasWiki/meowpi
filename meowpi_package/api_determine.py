@@ -14,7 +14,7 @@ def api_calc():
             active_endpoint_verified = api_passive_scoreboard.get(active_endpoint, False)
             if (active_endpoint_verified):
                 api_scoreboard[active_endpoint] = active_score + active_endpoint_verified
-            elif (active_score >= 1.4):
+            elif (active_score >= 1.2):
                 api_scoreboard[active_endpoint] = active_score
 
     if not (args.passive):
@@ -29,7 +29,7 @@ def api_calc():
 
                 else:
                     print(endpoint)
-            elif (active_points >= 2.4 and passive_points >= 0):
+            elif (active_points >= 2.2 and passive_points >= 0):
                 if not (args.stdout):
                     print(f"\033[34m[API] \033[32m[bi-method]\033[0m  {endpoint}")
                 else:
@@ -65,8 +65,10 @@ def api_calc():
         print(f' APIs Found: {len(api_scoreboard.keys())}')
 
   
-def api_update_active_score(url, points):
-    api_active_scoreboard.update({f"{url}":api_score + points})
+def api_update_active_score(url, points, json_points):
+    if json_points > 0:
+        json_points = 0.2
+    api_active_scoreboard.update({f"{url}":api_score + points + json_points})
 
 def api_update_passive_score(url, points):
     api_passive_scoreboard.update({f"{url}":api_score + points})

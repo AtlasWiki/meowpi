@@ -26,6 +26,7 @@ if (args.json_report):
 async def fetch_dir(client, dir):
     try:
         api_score = 0
+        json_points = 0
         if (args.json_report):
             report = report_maker()
             # initalize parent keys for the dictionary
@@ -66,7 +67,7 @@ async def fetch_dir(client, dir):
                     try:
                         get_file_type = get_response.headers.get("Content-Type").split(';')[0]
                         if (get_file_type == "application/json"):
-                            api_score += 0.2
+                            json_points += 0.2
                     except: 
                         get_file_type = get_response.headers.get("Content-Type")
                     get_status_message_strip = f"{get_status_color}[{get_status_colored_message}][GET]{reset_color} \033[34m[{get_file_type}]\033[0m  "
@@ -80,7 +81,7 @@ async def fetch_dir(client, dir):
                     try:
                         post_file_type = post_response.headers.get("Content-Type").split(';')[0]
                         if (post_file_type == "application/json"):
-                            api_score += 0.2
+                            json_points += 0.2
                     except: 
                         post_file_type = post_response.headers.get("Content-Type")
                     post_status_message_strip = f"{post_status_color}[{post_status_colored_message}][POST]{reset_color} \033[34m[{post_file_type}] \033[0m  "
@@ -94,7 +95,7 @@ async def fetch_dir(client, dir):
                     try:
                         patch_file_type = patch_response.headers.get("Content-Type").split(';')[0]
                         if (patch_file_type == "application/json"):
-                            api_score += 0.2
+                            json_points += 0.2
                     except: 
                         patch_file_type = patch_response.headers.get("Content-Type")
                     patch_status_message_strip = f"{patch_status_color}[{patch_status_colored_message}][PATCH]{reset_color} \033[34m[{patch_file_type}] \033[0m  "
@@ -108,7 +109,7 @@ async def fetch_dir(client, dir):
                     try:
                         put_file_type = put_response.headers.get("Content-Type").split(';')[0]
                         if (put_file_type == "application/json"):
-                            api_score += 0.2
+                           json_points += 0.2
                     except: 
                         put_file_type = put_response.headers.get("Content-Type")
                     put_status_message_strip = f"{put_status_color}[{put_status_colored_message}][PUT]{reset_color} \033[34m[{put_file_type}] \033[0m  "
@@ -122,7 +123,7 @@ async def fetch_dir(client, dir):
                     try:
                         delete_file_type = delete_response.headers.get("Content-Type").split(';')[0]
                         if (delete_file_type == "application/json"):
-                            api_score += 0.2
+                            json_points += 0.2
                     except: 
                         delete_file_type = delete_response.headers.get("Content-Type")
                     delete_status_message_strip = f"{delete_status_color}[{delete_status_colored_message}][DELETE]{reset_color} \033[34m[{delete_file_type}] \033[0m  "
@@ -136,7 +137,7 @@ async def fetch_dir(client, dir):
                     try:
                         head_file_type = head_response.headers.get("Content-Type").split(';')[0]
                         if (head_file_type == "application/json"):
-                            api_score += 0.2
+                           json_points += 0.2
                     except: 
                         head_file_type = head_response.headers.get("Content-Type")
                     head_status_message_strip = f"{head_status_color}[{head_status_colored_message}][HEAD]{reset_color} \033[34m[{head_file_type}] \033[0m  "
@@ -150,7 +151,7 @@ async def fetch_dir(client, dir):
                     try:
                         options_file_type = get_response.headers.get("Content-Type").split(';')[0]
                         if (options_file_type == "application/json"):
-                            api_score += 0.2
+                           json_points += 0.2
                     except: 
                         options_file_type = options_response.headers.get("Content-Type")
                     options_status_message_strip = f"{options_status_color}[{options_status_colored_message}][OPTIONS]{reset_color} \033[34m[{options_file_type}] \033[0m  "
@@ -266,7 +267,7 @@ async def fetch_dir(client, dir):
             if not (args.stdout):
                 tqdm.write(f'{http_message}{dir}')
 
-        api_update_active_score(dir, api_score)
+        api_update_active_score(dir, api_score, json_points)
         
 
         request = []
