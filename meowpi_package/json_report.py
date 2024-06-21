@@ -14,6 +14,9 @@ class report_maker:
         dict_report[url]['requests']["POST"] = {}
         dict_report[url]['requests']["HEAD"] = {}
         dict_report[url]['requests']["OPTIONS"] = {}
+        dict_report[url]['requests']["PATCH"] = {}
+        dict_report[url]['requests']["PUT"] = {}
+        dict_report[url]['requests']["DELETE"] = {}
         if args.json_report == "all":
             dict_report[url]['headers'] = {}
        

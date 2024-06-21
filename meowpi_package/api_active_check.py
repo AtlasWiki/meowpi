@@ -271,12 +271,21 @@ async def fetch_dir(client, dir):
         
 
         request = []
-        if (args.json_report == 'all'):
-            request = [('GET', get_status), ('POST', post_status), ('HEAD', head_status), ('OPTIONS', options_status)]
-            report.create_report(request, headers = get_response.headers)
-        elif(args.json_report == 'no-http-headers'):
-            request = [('GET', get_status), ('POST', post_status), ('HEAD', head_status), ('OPTIONS', options_status)]
-            report.create_report(request)
+        if (args.json_report):
+            request=[
+                       ('GET', get_status), 
+                       ('POST', post_status), 
+                       ('HEAD', head_status), 
+                       ('OPTIONS', options_status),
+                       ('PUT', put_status),
+                       ('PATCH', patch_status),
+                       ('DELETE', delete_status)
+                    ]
+            if (args.json_report == 'all'):
+                
+                report.create_report(request, headers = get_response.headers)
+            elif(args.json_report == 'no-http-headers'):
+                report.create_report(request)
        
     except Exception as e:
         # tqdm.write(f"Error processing {dir}: {e}") # for error checking
