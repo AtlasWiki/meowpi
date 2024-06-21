@@ -219,7 +219,7 @@ async def fetch_dir(client, dir):
         if (head_status_verified):
             if not (args.stdout):
                 http_message += head_status_message_strip 
-            api_score += 1
+            # api_score += 1
 
         if (options_status_verified):
             if not (args.stdout):
@@ -244,7 +244,7 @@ async def fetch_dir(client, dir):
         if not (get_status_verified or post_status_verified or head_status_verified or options_status_verified or put_status_verified or patch_status_verified or delete_status_verified):
             if not (args.stdout):          
                 if not (args.filter):
-                    http_message += f'{get_status_message_strip} {dir}'
+                    http_message += f'{get_status_message_strip} '
                     if (three_x_x_codes.get(get_status, False) or three_x_x_codes.get(post_status, False)):
                         get_3xx_response = await client.get((dir), follow_redirects=True)
                         post_3xx_response = await client.post((dir), follow_redirects=True)
@@ -253,9 +253,9 @@ async def fetch_dir(client, dir):
 
                         if (get_3xx_response_verified):
                             to_add.append(dir)
-                            http_message = f'{get_status_message_strip}\033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}]  {reset_color}{dir}'
+                            http_message = f'{get_status_message_strip}\033[95m[Redirect]\033[0m [{get_3xx_response.url}] {colored_3xx_response}[{str(get_3xx_response.status_code)}]  {reset_color}'
                         else:
-                            http_message = f'{get_status_message_strip}\033[95m[Redirect]\033[0m [{post_3xx_response.url}] {colored_3xx_response}[{str(post_3xx_response.status_code)}]  {reset_color}{dir}'
+                            http_message = f'{get_status_message_strip}\033[95m[Redirect]\033[0m [{post_3xx_response.url}] {colored_3xx_response}[{str(post_3xx_response.status_code)}]  {reset_color}'
                         tqdm.write(f'{http_message}{dir}')
                     else:
                         if dir[0] != "/" or dir[0] == "/":
@@ -277,7 +277,7 @@ async def fetch_dir(client, dir):
             
        
     except Exception as e:
-        tqdm.write(f"Error processing {dir}: {e}") # for error checking
+        # tqdm.write(f"Error processing {dir}: {e}") # for error checking
         to_remove.append(dir)
 
 
