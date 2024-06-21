@@ -23,13 +23,13 @@ def api_calc():
             passive_points = api_passive_scoreboard.get(endpoint, False)
             if (args.active):
                 passive_points = 100
-            if (active_points >= 3 and passive_points >= 0):
+            if (active_points >= 4 and passive_points >= 0):
                 if not (args.stdout):
                     print(f"\033[34m[API] \033[95m[multi-method]\033[0m  {endpoint}")
 
                 else:
                     print(endpoint)
-            elif (active_points >= 2.6 and passive_points >= 0):
+            elif (active_points >= 3.4 and passive_points >= 0):
                 if not (args.stdout):
                     print(f"\033[34m[API] \033[32m[bi-method]\033[0m  {endpoint}")
                 else:

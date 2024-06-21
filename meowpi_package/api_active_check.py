@@ -240,7 +240,7 @@ async def fetch_dir(client, dir):
             if not (args.stdout):
                 http_message += delete_status_message_strip 
             api_score += 1
-           
+            
         if not (get_status_verified or post_status_verified or head_status_verified or options_status_verified or put_status_verified or patch_status_verified or delete_status_verified):
             if not (args.stdout):          
                 if not (args.filter):
@@ -261,12 +261,13 @@ async def fetch_dir(client, dir):
                         if dir[0] != "/" or dir[0] == "/":
                             to_remove.append(dir)
                         http_message=''
-                        
+        
         else:
             if not (args.stdout):
                 tqdm.write(f'{http_message}{dir}')
 
         api_update_active_score(dir, api_score)
+        
 
         request = []
         if (args.json_report == 'all'):
