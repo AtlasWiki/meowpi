@@ -27,9 +27,11 @@ if __name__ == "__main__":
             for line in urls:
                 all_dirs.append(line.strip('\n'))
     except Exception:
+        if not (args.stdout):
+            print(intro_logo)
+            print("If stuck hanging insert CTRL + D or CTRL + Z or even CTRL + C. This likely happens due to empty stdin/input/args")
         for url in sys.stdin:
             all_dirs.append(url.strip("\n"))
-
     if not (args.stdout):
         print(intro_logo)
     if not (args.passive):
