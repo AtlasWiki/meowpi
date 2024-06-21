@@ -31,12 +31,12 @@ pip install -r requirements.txt
 run the file:
 + python:
 ```
-python meowpi.py -f all_urls.txt
+python meowpi.py -i all_urls.txt
 ```
 or
 + linux:
 ```
-./meowpi.py -f all_urls.txt
+./meowpi.py -i all_urls.txt
 ```
 
 
