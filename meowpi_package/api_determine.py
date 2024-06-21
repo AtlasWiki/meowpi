@@ -26,9 +26,10 @@ def api_calc():
             if (active_points >= 3 and passive_points >= 0):
                 if not (args.stdout):
                     print(f"\033[34m[API] \033[95m[multi-method]\033[0m  {endpoint}")
+
                 else:
                     print(endpoint)
-            elif (active_points >= 2 and passive_points >= 0):
+            elif (active_points >= 2.6 and passive_points >= 0):
                 if not (args.stdout):
                     print(f"\033[34m[API] \033[32m[bi-method]\033[0m  {endpoint}")
                 else:
