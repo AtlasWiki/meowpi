@@ -24,11 +24,14 @@ def parse_domain(http_url):
 
 def parse_dirs(url):
     url_pieces = url.split("/")
-    formatted_dirs = url_pieces[3::]
+    if (url.startswith("http") or url.startswith("https")):
+        formatted_dirs = url_pieces[3::]
+    else:
+        formatted_dirs = url_pieces
 
     for dir in formatted_dirs[:]:
         if (dir == ''):
-           formatted_dirs.remove('')
+            formatted_dirs.remove('')
 
     unformatted_dirs = formatted_dirs.copy()
     
@@ -37,8 +40,10 @@ def parse_dirs(url):
 
     for index,value in enumerate(formatted_dirs[:]):
         formatted_dirs[index] = "/" + value.lower()
-        
+    
     return formatted_dirs,unformatted_dirs
+
+
 
 def remove_dupes(all_dirs):
     all_dirs[:] = list(dict.fromkeys(all_dirs))

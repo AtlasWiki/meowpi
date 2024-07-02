@@ -6,7 +6,7 @@ api_keywords= [
     "catalog", "password", "alert", "category", "balance", "channel",
     "buy", "sell", "card", "challenge", "wallet", "product",
     "tag", "inventory", "payment", "ticket", "message", "article",
-    "book", "cart"
+    "book", "cart",
     ]
 api_paths = {
     "/login":"/login",
