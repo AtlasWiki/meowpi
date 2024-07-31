@@ -21,11 +21,11 @@ def argparser():
 
     parser = argparse.ArgumentParser(prog= f"python {get_py_filename}", description='\u001b[96mdescription: verifies and filters API urls passively and actively by default', epilog=
     f'''
-    \u001b[91mbasic usage:\u001b[0m python {get_py_filename } -f urls.txt
-    \u001b[91mfilter requests:\u001b[0m python {get_py_filename } -f urls.txt -m
-    \u001b[91mstdout:\u001b[0m python {get_py_filename } -f urls.txt -s
-    \u001b[91mjson-reports:\u001b[0m python {get_py_filename } -f urls.txt -j all   
-    ''', formatter_class=NewlineFormatter, usage=f'{intro_logo}\n\u001b[32m%(prog)s [options] -f file_name\u001b[0m')
+    \u001b[91mbasic usage:\u001b[0m python {get_py_filename } -i urls.txt
+    \u001b[91mfilter requests:\u001b[0m python {get_py_filename } -i urls.txt -m
+    \u001b[91mstdout:\u001b[0m python {get_py_filename } -i urls.txt -s
+    \u001b[91mjson-reports:\u001b[0m python {get_py_filename } -i urls.txt -j all   
+    ''', formatter_class=NewlineFormatter, usage=f'{intro_logo}\n\u001b[32m%(prog)s [options] -i file_name\u001b[0m')
 
     parser.add_argument("-i", "--file", help="\u001b[96mspecify file/list of urls")
     parser.add_argument("-s", "--stdout", help="stdout friendly, displays urls only in stdout compatibility. also known as silent mode", action="store_true")
