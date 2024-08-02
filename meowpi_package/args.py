@@ -16,6 +16,7 @@ def argparser():
 ╚═╝░░░░░╚═╝╚══════╝░╚════╝░░░░╚═╝░░░╚═╝░░╚═╝░░░░░╚═╝
         
 -------------------------------------------------------------------\u001b[0m"""
+    intro_logo = ""
     class NewlineFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
         pass
 
@@ -36,8 +37,9 @@ def argparser():
     parser.add_argument("--no-api-check", help="uses only http probing and no api checks", action="store_true")
     parser.add_argument('-j', '--json-report', help="output a file in json to show a report of all endpoints", choices=['all', 'no-http-headers'])
     parser.add_argument("-r", "--requests", help="the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 15 req/sec (without specifying) which would be actually 30)", type=int, default=15)
-    
+    parser.add_argument("-n", "--no-logo", help="remove logo", action="store_true")
     args = parser.parse_args()
+
     if args.method:
         args.method = ",".join(args.method).split(",")
 

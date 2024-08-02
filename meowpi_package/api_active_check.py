@@ -299,7 +299,7 @@ async def api_act_check():
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
     tasks = []
     batch_size = args.requests
-    if not (args.stdout):
+    if not (args.stdout or args.no_logo):
         print("""\n
 
 █▀ ▄▀█ █▀▀ ▀█▀ █ █░█ █▀▀   █▀▀ █░█ █▀▀ █▀▀ █▄▀ ▀█

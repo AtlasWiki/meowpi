@@ -11,7 +11,7 @@ def api_pass_check():
     # try:
         start_time = time.time()
         if not (args.active):
-            if not (args.stdout):
+            if not (args.stdout or args.no_logo):
                 print("""\n
 █▀ █▀█ ▄▀█ █▀ █▀ █ █░█ █▀▀   █▀▀ █░█ █▀▀ █▀▀ █▄▀ ▀█
 █▄ █▀▀ █▀█ ▄█ ▄█ █ ▀▄▀ ██▄   █▄▄ █▀█ ██▄ █▄▄ █░█ ▄█\n""")
