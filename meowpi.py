@@ -32,7 +32,7 @@ if __name__ == "__main__":
             print("If stuck hanging insert CTRL + D or CTRL + Z or even CTRL + C. This likely happens due to invalid stdin/input/args")
         for url in sys.stdin:
             all_dirs.append(url.strip("\n"))
-    if not (args.stdout or args.no_logo or args.save_html):
+    if not (args.stdout or args.no_logo):
         print(intro_logo)
     if not (args.passive):
         asyncio.run(api_act_check())
