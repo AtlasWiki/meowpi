@@ -38,9 +38,9 @@ def argparser():
     parser.add_argument('-j', '--json-report', help="output a file in json to show a report of all endpoints", choices=['all', 'no-http-headers'])
     parser.add_argument("-r", "--requests", help="the number of concurrent/multiple requests per second (it is multiplied by 2 as it does both GET and POST) (default is set to 15 req/sec (without specifying) which would be actually 30)", type=int, default=15)
     parser.add_argument("-n", "--no-logo", help="remove logo", action="store_true")
+    parser.add_argument("-x", "--save-html", help="saves an html screenshot of the results", action="store_true")
     args = parser.parse_args()
 
     if args.method:
         args.method = ",".join(args.method).split(",")
-
     return args

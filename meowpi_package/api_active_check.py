@@ -12,10 +12,11 @@ from meowpi_package.statuses import(
 )
 import httpx, time, asyncio
 from tqdm import tqdm
+
 # from meowpi_package.utils import create_report
 from meowpi_package.args import argparser
 from meowpi_package.utils import parse_domain, parse_dirs
-from meowpi_package.shared import all_dirs, to_remove, to_add
+from meowpi_package.shared import all_dirs, to_remove, to_add, http_messages
 from meowpi_package.api_determine import api_update_active_score
 from meowpi_package.json_report import report_maker
 
@@ -266,7 +267,8 @@ async def fetch_dir(client, dir):
         else:
             if not (args.stdout):
                 tqdm.write(f'{http_message}{dir}')
-
+            if args.save_html:
+                http_messages.append(f'{http_message}{dir}')
         api_update_active_score(dir, api_score, json_points)
         
 
@@ -282,7 +284,6 @@ async def fetch_dir(client, dir):
                        ('DELETE', delete_status)
                     ]
             if (args.json_report == 'all'):
-                
                 report.create_report(request, headers = get_response.headers)
             elif(args.json_report == 'no-http-headers'):
                 report.create_report(request)
@@ -299,11 +300,12 @@ async def api_act_check():
     headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.246'}
     tasks = []
     batch_size = args.requests
-    if not (args.stdout or args.no_logo):
-        print("""\n
+    if not (args.stdout ):
+        if not (args.no_logo or args.save_html):
+            print("""\n
 
-█▀ ▄▀█ █▀▀ ▀█▀ █ █░█ █▀▀   █▀▀ █░█ █▀▀ █▀▀ █▄▀ ▀█
-█▄ █▀█ █▄▄ ░█░ █ ▀▄▀ ██▄   █▄▄ █▀█ ██▄ █▄▄ █░█ ▄█\n""")
+    █▀ ▄▀█ █▀▀ ▀█▀ █ █░█ █▀▀   █▀▀ █░█ █▀▀ █▀▀ █▄▀ ▀█
+    █▄ █▀█ █▄▄ ░█░ █ ▀▄▀ ██▄   █▄▄ █▀█ ██▄ █▄▄ █░█ ▄█\n""")
         pbar = tqdm(total=total_dir_counts, desc=" Probing", unit='URL', bar_format=custom_bar_format, position=4, ncols=80, leave=False)
         async with httpx.AsyncClient(follow_redirects=False, headers=headers) as client:
             # with tqdm(total=total_dir_counts, desc=" Probing", unit='URL', bar_format=custom_bar_format, position=4, dynamic_ncols=True, leave=False) as pbar:

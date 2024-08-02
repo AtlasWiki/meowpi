@@ -11,10 +11,11 @@ def api_pass_check():
     # try:
         start_time = time.time()
         if not (args.active):
-            if not (args.stdout or args.no_logo):
-                print("""\n
-█▀ █▀█ ▄▀█ █▀ █▀ █ █░█ █▀▀   █▀▀ █░█ █▀▀ █▀▀ █▄▀ ▀█
-█▄ █▀▀ █▀█ ▄█ ▄█ █ ▀▄▀ ██▄   █▄▄ █▀█ ██▄ █▄▄ █░█ ▄█\n""")
+            if not (args.stdout):
+                if not (args.no_logo or args.save_html):
+                    print("""\n
+    █▀ █▀█ ▄▀█ █▀ █▀ █ █░█ █▀▀   █▀▀ █░█ █▀▀ █▀▀ █▄▀ ▀█
+    █▄ █▀▀ █▀█ ▄█ ▄█ █ ▀▄▀ ██▄   █▄▄ █▀█ ██▄ █▄▄ █░█ ▄█\n""")
             for url in all_dirs[:]:
                 api_score = 0
                 formatted_dirs, unformatted_dirs = parse_dirs(url)
