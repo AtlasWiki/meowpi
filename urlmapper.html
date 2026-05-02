@@ -1,0 +1,3593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>meowpi · urlmapper</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;700;800&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #11111a;
+    --surface2: #1a1a28;
+    --border: #2a2a40;
+    --border-bright: #3d3d60;
+    --text: #c8c8e8;
+    --text-dim: #6868a0;
+    --text-bright: #eeeeff;
+    --accent: #7c3aed;
+    --accent-glow: rgba(124,58,237,0.3);
+    --green: #22d3a0;
+    --green-dim: rgba(34,211,160,0.15);
+    --red: #f43f5e;
+    --red-dim: rgba(244,63,94,0.15);
+    --yellow: #f59e0b;
+    --yellow-dim: rgba(245,158,11,0.15);
+    --blue: #38bdf8;
+    --blue-dim: rgba(56,189,248,0.15);
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --gray: #64748b;
+    --gray-dim: rgba(100,116,139,0.15);
+    --node-api: #7c3aed;
+    --node-static: #1e3a5f;
+    --node-domain: #0f2027;
+    --panel-w: 460px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOPBAR ── */
+  #topbar {
+    height: 48px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+    z-index: 100;
+    flex-shrink: 0;
+    overflow-x: auto;
+  }
+
+  #logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--text-bright);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #logo span { color: var(--accent); }
+
+  .topbar-sep { width: 1px; height: 24px; background: var(--border); flex-shrink: 0; }
+
+  #stats {
+    display: flex;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .stat b { color: var(--text-bright); font-weight: 600; }
+
+  #load-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #load-btn:hover { opacity: 0.85; }
+
+  #view-toggle {
+    display: flex;
+    gap: 2px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 3px;
+    flex-shrink: 0;
+  }
+  .view-btn {
+    background: transparent;
+    color: var(--text-dim);
+    border: none;
+    padding: 4px 12px;
+    border-radius: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .view-btn.active { background: var(--accent); color: #fff; }
+  .view-btn:not(.active):hover { color: var(--text); background: var(--surface); }
+
+  #demo-btn {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #demo-btn:hover { border-color: var(--border-bright); color: var(--text); }
+
+  /* ── MAIN LAYOUT ── */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ── CANVAS ── */
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+    width: 100%;
+  }
+
+  /* dot grid background */
+  #canvas-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(124,58,237,0.10) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    cursor: grab;
+  }
+  #canvas.dragging-canvas { cursor: grabbing; }
+  #canvas.dragging-node { cursor: grabbing; }
+
+  /* ── CONTROLS ── */
+  #controls {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 10;
+  }
+  .ctrl-group {
+    display: flex;
+    gap: 4px;
+  }
+  .ctrl-btn {
+    width: 34px; height: 34px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .ctrl-btn:hover { border-color: var(--border-bright); background: var(--surface2); }
+  .ctrl-btn.active { border-color: var(--accent); color: var(--purple); background: rgba(124,58,237,0.1); }
+
+  /* ── LEGEND ── */
+  #legend {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    background: rgba(17,17,26,0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    z-index: 10;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  #legend .leg-title { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+  .leg-row { display: flex; align-items: center; gap: 8px; color: var(--text-dim); }
+  .leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .leg-sep { height: 1px; background: var(--border); margin: 2px 0; }
+
+  /* ── SIDE PANEL — overlays canvas so canvas never shrinks ── */
+  #panel {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: var(--panel-w);
+    max-width: 100vw;
+    background: rgba(14,14,22,0.97);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    transform: translateX(100%);
+    overflow: hidden;
+    z-index: 50;
+  }
+  #panel.open { transform: translateX(0); }
+
+  #panel-header {
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex-shrink: 0;
+    background: var(--surface2);
+  }
+
+  #panel-close {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 4px 6px;
+    border-radius: 5px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  #panel-close:hover { color: var(--text); border-color: var(--border-bright); }
+
+  #panel-url-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  #panel-url {
+    font-size: 11px;
+    color: var(--blue);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow-x: auto;
+    flex: 1;
+    line-height: 1.6;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-bright) transparent;
+    cursor: text;
+    padding-bottom: 2px;
+  }
+  #panel-url::-webkit-scrollbar { height: 3px; }
+  #panel-url::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+  #panel-copy-btn {
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  #panel-copy-btn:hover { border-color: var(--border-bright); color: var(--text); }
+  #panel-copy-btn.copied { border-color: var(--green); color: var(--green); }
+
+  #panel-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .panel-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .badge-api { background: var(--accent-glow); border: 1px solid var(--accent); color: var(--purple); }
+  .badge-null { background: var(--gray-dim); border: 1px solid var(--gray); color: var(--gray); }
+  .badge-static { background: rgba(51,65,85,0.4); border: 1px solid #334155; color: #94a3b8; }
+
+  #panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  #panel-body::-webkit-scrollbar { width: 4px; }
+  #panel-body::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+  .section-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* null response section */
+  .null-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--gray-dim);
+    border: 1px solid rgba(100,116,139,0.3);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--text-dim);
+  }
+  .null-notice .null-icon { font-size: 18px; flex-shrink: 0; }
+  .null-notice strong { color: var(--text); display: block; margin-bottom: 3px; }
+
+  /* method table */
+  .method-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .method-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+  }
+  .method-row:hover { border-color: var(--border-bright); background: #1e1e30; }
+  .method-row.active { border-color: var(--accent); background: rgba(124,58,237,0.08); }
+
+  .method-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    min-width: 52px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .m-GET    { background: var(--green-dim);  color: var(--green); }
+  .m-POST   { background: var(--blue-dim);   color: var(--blue); }
+  .m-PUT    { background: var(--yellow-dim); color: var(--yellow); }
+  .m-PATCH  { background: var(--yellow-dim); color: var(--orange); }
+  .m-DELETE { background: var(--red-dim);    color: var(--red); }
+  .m-HEAD   { background: rgba(120,120,180,0.15); color: var(--text-dim); }
+  .m-OPTIONS{ background: rgba(120,120,180,0.15); color: var(--text-dim); }
+
+  .status-code {
+    font-weight: 700;
+    font-size: 12px;
+    min-width: 36px;
+    flex-shrink: 0;
+  }
+  .s-2 { color: var(--green); }
+  .s-3 { color: var(--yellow); }
+  .s-4 { color: var(--red); }
+  .s-5 { color: var(--orange); }
+  .s-1 { color: var(--text-dim); }
+
+  .status-msg {
+    color: var(--text-dim);
+    font-size: 11px;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .content-type-tag {
+    font-size: 10px;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 3px;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .expand-arrow {
+    color: var(--text-dim);
+    font-size: 11px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .method-row.active .expand-arrow { transform: rotate(90deg); }
+
+  /* packet view */
+  .packet-panel {
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 4px;
+    border-radius: 7px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .packet-panel.open { display: flex; }
+
+  .packet-tab-bar {
+    display: flex;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .packet-tab {
+    padding: 6px 14px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-dim);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .packet-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  .packet-content {
+    background: var(--bg);
+    padding: 10px 12px;
+    font-size: 11px;
+    line-height: 1.8;
+    max-height: 220px;
+    overflow-y: auto;
+    display: none;
+  }
+  .packet-content.active { display: block; }
+  .packet-content::-webkit-scrollbar { width: 3px; }
+  .packet-content::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .header-line {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .header-key { color: var(--purple); flex-shrink: 0; }
+  .header-val { color: var(--text); word-break: break-all; }
+
+  /* ── HOVER TOOLTIP ── */
+  #tooltip {
+    position: fixed;
+    background: rgba(17,17,26,0.97);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-bright);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 11px;
+    pointer-events: none;
+    z-index: 200;
+    display: none;
+    max-width: 300px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+  #tooltip .tt-url { color: var(--blue); font-size: 10px; margin-bottom: 6px; word-break: break-all; line-height: 1.5; }
+  #tooltip .tt-methods { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+  #tooltip .tt-ct { color: var(--text-dim); font-size: 10px; }
+  #tooltip .tt-null { color: var(--gray); font-size: 10px; font-style: italic; margin-bottom: 4px; }
+  #tooltip .tt-hint { color: var(--text-dim); font-size: 10px; margin-top: 6px; border-top: 1px solid var(--border); padding-top: 6px; }
+
+  /* ── EMPTY STATE ── */
+  #empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    z-index: 5;
+    pointer-events: none;
+  }
+  #empty-state.hidden { display: none; }
+  #empty-state .es-icon { font-size: 48px; opacity: 0.3; }
+  #empty-state .es-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 20px; color: var(--text-dim); }
+  #empty-state .es-sub { color: var(--text-dim); font-size: 12px; text-align: center; max-width: 320px; line-height: 1.6; opacity: 0.7; }
+
+  /* ── FILTER BAR ── */
+  /* ── GRAPH FILTER BAR ── */
+  #filterbar {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    background: rgba(14,14,22,0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    min-width: 340px;
+    max-width: 680px;
+    width: max-content;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  #filterbar:focus-within { border-color: var(--border-bright); }
+
+  #filterbar-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+  }
+
+  #graph-search-icon {
+    color: var(--text-dim);
+    font-size: 12px;
+    flex-shrink: 0;
+    pointer-events: none;
+    padding-left: 2px;
+  }
+
+  #graph-search {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text-bright);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    min-width: 0;
+    caret-color: var(--accent);
+  }
+  #graph-search::placeholder { color: var(--text-dim); font-size: 11px; }
+
+  #graph-search-clear {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 3px;
+    flex-shrink: 0;
+    transition: color 0.15s;
+  }
+  #graph-search-clear:hover { color: var(--text); }
+  #graph-search-clear.visible { display: block; }
+
+  #graph-filter-match {
+    font-size: 10px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding-right: 2px;
+  }
+  #graph-filter-match.has-results { color: var(--green); }
+  #graph-filter-match.no-results  { color: var(--red); }
+
+  #filter-toggle-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  #filter-toggle-btn:hover { border-color: var(--border-bright); color: var(--text); }
+  #filter-toggle-btn.active { border-color: var(--accent); color: var(--purple); background: rgba(124,58,237,0.12); }
+  #filter-toggle-btn .filter-active-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: none;
+  }
+  #filter-toggle-btn.has-filter .filter-active-dot { display: block; }
+
+  #filterbar-pills {
+    display: none;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0 8px 7px;
+    border-top: 1px solid var(--border);
+    margin-top: 2px;
+    padding-top: 7px;
+  }
+  #filterbar-pills.open { display: flex; }
+
+  .fpill-group-label {
+    width: 100%;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    padding: 4px 2px 2px;
+    opacity: 0.7;
+  }
+  .fpill-group-label:first-child { padding-top: 0; }
+
+  .filter-pill {
+    padding: 3px 9px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-dim);
+    transition: all 0.12s;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .filter-pill.active {
+    background: var(--surface2);
+    border-color: var(--border-bright);
+    color: var(--text-bright);
+  }
+  .filter-pill:hover:not(.active) { color: var(--text); border-color: var(--border); }
+
+  /* category tints */
+  .filter-pill[data-filter="null"].active  { border-color: var(--gray); color: #94a3b8; }
+  .filter-pill[data-filter="api"].active   { border-color: var(--accent); color: var(--purple); background: rgba(124,58,237,0.12); }
+  .filter-pill[data-filter="2xx"].active   { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+  .filter-pill[data-filter="3xx"].active   { border-color: var(--yellow); color: var(--yellow); background: var(--yellow-dim); }
+  .filter-pill[data-filter="4xx"].active   { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+  .filter-pill[data-filter="5xx"].active   { border-color: var(--orange); color: var(--orange); background: rgba(251,146,60,0.12); }
+
+  /* search highlight ring on nodes */
+  @keyframes search-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(56,189,248,0.5); }
+    70%  { box-shadow: 0 0 0 8px rgba(56,189,248,0); }
+    100% { box-shadow: 0 0 0 0 rgba(56,189,248,0); }
+  }
+
+  /* ── LOG PILLS ── */
+  .log-pill {
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-dim);
+    border: 1px solid transparent;
+    transition: all 0.12s;
+    white-space: nowrap;
+  }
+  .log-pill.active { background: var(--surface2); border-color: var(--border-bright); color: var(--text-bright); }
+  .log-pill:hover:not(.active) { color: var(--text); }
+
+  /* ── LOG TABLE ── */
+  .log-domain-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+  .log-domain-header:hover { background: #1e1e30; }
+  .log-domain-badge {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: #0ea5e9;
+  }
+  .log-domain-count {
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  .log-domain-chevron {
+    margin-left: auto;
+    color: var(--text-dim);
+    font-size: 11px;
+    transition: transform 0.2s;
+  }
+  .log-domain-chevron.collapsed { transform: rotate(-90deg); }
+
+  .log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .log-table th {
+    background: var(--surface);
+    color: var(--text-dim);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    padding: 4px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  .log-table th:hover { color: var(--text); }
+  .log-table th.sorted-asc::after { content: ' ▲'; }
+  .log-table th.sorted-desc::after { content: ' ▼'; }
+  .log-table td {
+    padding: 2px 8px;
+    border-bottom: 1px solid rgba(42,42,64,0.35);
+    vertical-align: middle;
+    white-space: nowrap;
+    line-height: 1.4;
+  }
+  .log-row { cursor: pointer; transition: background 0.1s; }
+  .log-row:hover td { background: var(--surface2); }
+  .log-row:hover .log-url-cell { color: var(--text-bright); }
+
+  .log-method-tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+    min-width: 40px;
+    text-align: center;
+  }
+  .log-status {
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .log-ct-tag {
+    font-size: 9px;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+  .log-url-cell {
+    color: var(--blue);
+    max-width: 420px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+  .log-url-cell:hover {
+    overflow: visible;
+    white-space: normal;
+    word-break: break-all;
+    position: relative;
+    z-index: 3;
+    background: var(--surface2);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    border-radius: 4px;
+    padding: 2px 4px;
+  }
+  .log-path-cell {
+    color: var(--text);
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+  .log-tag-api { background: rgba(124,58,237,0.2); border: 1px solid #7c3aed; color: #a78bfa; font-size:9px; padding:1px 5px; border-radius:3px; }
+  .log-tag-null { color: var(--gray); font-size: 10px; }
+
+  /* log empty state */
+  #log-body:empty::after, .log-empty {
+    display: block;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
+  /* ── DRAG HINT ── */
+  #drag-hint {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(17,17,26,0.85);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 10px;
+    color: var(--text-dim);
+    z-index: 10;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 1s;
+  }
+  #drag-hint.fade { opacity: 0; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    :root { --panel-w: 100vw; }
+    #stats .stat:nth-child(n+5) { display: none; }
+    #legend { display: none; }
+  }
+  @media (max-width: 480px) {
+    #stats .stat:nth-child(n+3) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div id="logo">🐾 <span>meow</span>pi · urlmapper</div>
+  <div class="topbar-sep"></div>
+  <div id="stats">
+    <div class="stat">endpoints: <b id="stat-total">0</b></div>
+    <div class="stat">apis: <b id="stat-api">0</b></div>
+    <div class="stat">2xx: <b id="stat-2xx" style="color:var(--green)">0</b></div>
+    <div class="stat">4xx: <b id="stat-4xx" style="color:var(--red)">0</b></div>
+    <div class="stat">5xx: <b id="stat-5xx" style="color:var(--orange)">0</b></div>
+    <div class="stat">silent: <b id="stat-null" style="color:var(--gray)">0</b></div>
+  </div>
+  <div class="topbar-sep"></div>
+  <div id="view-toggle">
+    <button class="view-btn active" id="btn-graph" onclick="switchView('graph')">⬡ Graph</button>
+    <button class="view-btn" id="btn-tree" onclick="switchView('tree')">⊞ Tree</button>
+    <button class="view-btn" id="btn-log" onclick="switchView('log')">≡ Log</button>
+  </div>
+  <div class="topbar-sep"></div>
+  <input type="file" id="file-input" accept=".json" style="display:none">
+  <button id="demo-btn" onclick="loadDemo()">Load Demo</button>
+  <button id="load-btn" onclick="document.getElementById('file-input').click()">📂 Load JSON</button>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <div id="canvas-wrap">
+    <!-- filter pills -->
+    <div id="filterbar">
+      <div id="filterbar-top">
+        <span id="graph-search-icon">🔍</span>
+        <input id="graph-search" type="text" placeholder="search nodes by URL, type, status…"
+          autocomplete="off" spellcheck="false"
+          oninput="onGraphSearch(this.value)"
+          onkeydown="if(event.key==='Escape'){clearGraphSearch();}">
+        <span id="graph-filter-match"></span>
+        <button id="graph-search-clear" onclick="clearGraphSearch()" title="Clear search">✕</button>
+        <button id="filter-toggle-btn" onclick="toggleFilterPills()" title="Toggle filters">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block">
+            <path d="M1 3h14M3.5 8h9M6 13h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <span class="filter-active-dot"></span>
+        </button>
+      </div>
+      <div id="filterbar-pills">
+        <div class="fpill-group-label">Status</div>
+        <div class="filter-pill active" data-filter="all"    onclick="setFilter('all',this)">All</div>
+        <div class="filter-pill"        data-filter="api"    onclick="setFilter('api',this)">⚡ API</div>
+        <div class="filter-pill"        data-filter="2xx"    onclick="setFilter('2xx',this)">2xx</div>
+        <div class="filter-pill"        data-filter="3xx"    onclick="setFilter('3xx',this)">3xx</div>
+        <div class="filter-pill"        data-filter="4xx"    onclick="setFilter('4xx',this)">4xx</div>
+        <div class="filter-pill"        data-filter="5xx"    onclick="setFilter('5xx',this)">5xx</div>
+        <div class="filter-pill"        data-filter="static" onclick="setFilter('static',this)">📦 Static</div>
+        <div class="filter-pill"        data-filter="null"   onclick="setFilter('null',this)">⚫ Silent</div>
+        <!-- filetype pills injected by JS after data loads -->
+        <div id="filetype-pills-wrap" style="display:none;width:100%">
+          <div class="fpill-group-label">File Type</div>
+          <div id="filetype-pills" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- drag hint -->
+    <div id="drag-hint">💡 Drag nodes to reposition · Scroll to zoom · Right-drag to pan</div>
+
+    <canvas id="canvas"></canvas>
+
+    <!-- zoom controls -->
+    <div id="controls">
+      <div class="ctrl-group">
+        <div class="ctrl-btn" onclick="zoom(0.2)" title="Zoom in">+</div>
+        <div class="ctrl-btn" onclick="zoom(-0.2)" title="Zoom out">−</div>
+        <div class="ctrl-btn" onclick="resetView()" title="Reset view" style="font-size:12px">⌖</div>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-btn" id="sim-btn" onclick="toggleSim()" title="Toggle physics simulation" style="font-size:11px">⚛</div>
+        <div class="ctrl-btn" onclick="relayout()" title="Re-layout graph" style="font-size:11px">⟳</div>
+      </div>
+    </div>
+
+    <!-- legend -->
+    <div id="legend">
+      <div class="leg-title">Node type</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#7c3aed"></div>API endpoint</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#0ea5e9"></div>Domain root</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#334155"></div>Static / asset</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#f43f5e"></div>4xx error</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#64748b"></div>Silent (no response)</div>
+      <div class="leg-sep"></div>
+      <div style="font-size:10px;color:var(--text-dim)">Drag nodes · Scroll to zoom</div>
+    </div>
+
+    <!-- empty state -->
+    <div id="empty-state">
+      <div class="es-icon">🐾</div>
+      <div class="es-title">No data loaded</div>
+      <div class="es-sub">Load a <code>urlmapper_data.json</code> exported by meowpi, or click <strong>Load Demo</strong> to try with example data.</div>
+    </div>
+
+    <!-- settling notice for large graphs -->
+    <div id="settling-notice" style="display:none;position:absolute;bottom:60px;left:50%;transform:translateX(-50%);
+      background:rgba(17,17,26,0.92);border:1px solid var(--border);border-radius:8px;
+      padding:8px 16px;font-size:11px;color:var(--text-dim);z-index:20;white-space:nowrap;
+      backdrop-filter:blur(8px);">
+      ⚛ Settling layout — <span id="settling-count"></span> nodes…
+    </div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div id="panel">
+    <div id="panel-header">
+      <div style="flex:1;min-width:0">
+        <div id="panel-url-wrap">
+          <div id="panel-url"></div>
+          <button id="panel-copy-btn" title="Copy URL" onclick="copyPanelUrl()">⎘</button>
+        </div>
+        <div id="panel-badges"></div>
+      </div>
+      <button id="panel-close" onclick="closePanel()" title="Close panel">✕</button>
+    </div>
+    <div id="panel-body"></div>
+  </div>
+</div>
+
+<!-- LOG VIEW -->
+<div id="log-view" style="display:none;flex:1;overflow:hidden;flex-direction:column;background:var(--bg);">
+  <!-- log toolbar -->
+  <div id="log-toolbar" style="
+    display:flex;align-items:center;gap:8px;padding:8px 14px;
+    background:var(--surface);border-bottom:1px solid var(--border);
+    flex-shrink:0;flex-wrap:wrap;">
+    <input id="log-search" type="text" placeholder="🔍 filter by URL, method, status, content-type…"
+      oninput="renderLog()" style="
+      flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border);
+      color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;
+      padding:5px 10px;border-radius:6px;outline:none;transition:border-color 0.15s;"
+      onfocus="this.style.borderColor='var(--border-bright)'"
+      onblur="this.style.borderColor='var(--border)'">
+    <div id="log-filter-pills" style="display:flex;gap:3px;flex-wrap:wrap;">
+      <div class="log-pill active" data-lf="all"    onclick="setLogFilter('all',this)">All</div>
+      <div class="log-pill"        data-lf="api"    onclick="setLogFilter('api',this)">API</div>
+      <div class="log-pill"        data-lf="2xx"    onclick="setLogFilter('2xx',this)">2xx</div>
+      <div class="log-pill"        data-lf="3xx"    onclick="setLogFilter('3xx',this)">3xx</div>
+      <div class="log-pill"        data-lf="4xx"    onclick="setLogFilter('4xx',this)">4xx</div>
+      <div class="log-pill"        data-lf="5xx"    onclick="setLogFilter('5xx',this)">5xx</div>
+      <div class="log-pill"        data-lf="static" onclick="setLogFilter('static',this)">Static</div>
+      <div class="log-pill"        data-lf="null"   onclick="setLogFilter('null',this)">Silent</div>
+    </div>
+    <div id="log-count" style="font-size:10px;color:var(--text-dim);white-space:nowrap;flex-shrink:0;"></div>
+    <button onclick="exportLogCsv()" style="
+      background:transparent;border:1px solid var(--border);color:var(--text-dim);
+      font-family:'JetBrains Mono',monospace;font-size:10px;padding:4px 10px;border-radius:5px;
+      cursor:pointer;transition:all 0.15s;white-space:nowrap;"
+      onmouseover="this.style.borderColor='var(--border-bright)';this.style.color='var(--text)'"
+      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">⬇ CSV</button>
+  </div>
+  <!-- log body -->
+  <div id="log-body" style="flex:1;overflow-y:auto;overflow-x:hidden;padding:0;"></div>
+</div>
+
+<!-- TREE VIEW -->
+<div id="tree-view" style="display:none;">
+  <!-- tree toolbar -->
+  <div id="tree-toolbar" style="
+    display:flex;align-items:center;gap:8px;padding:8px 14px;
+    background:var(--surface);border-bottom:1px solid var(--border);
+    flex-shrink:0;flex-wrap:wrap;">
+    <input id="tree-search" type="text" placeholder="🔍 filter by domain, path, status…"
+      oninput="renderTree()" style="
+      flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border);
+      color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;
+      padding:5px 10px;border-radius:6px;outline:none;transition:border-color 0.15s;"
+      onfocus="this.style.borderColor='var(--border-bright)'"
+      onblur="this.style.borderColor='var(--border)'">
+    <div style="display:flex;gap:3px;flex-wrap:wrap;">
+      <div class="log-pill active" data-tf="all"    onclick="setTreeFilter('all',this)">All</div>
+      <div class="log-pill"        data-tf="api"    onclick="setTreeFilter('api',this)">API</div>
+      <div class="log-pill"        data-tf="2xx"    onclick="setTreeFilter('2xx',this)">2xx</div>
+      <div class="log-pill"        data-tf="3xx"    onclick="setTreeFilter('3xx',this)">3xx</div>
+      <div class="log-pill"        data-tf="4xx"    onclick="setTreeFilter('4xx',this)">4xx</div>
+      <div class="log-pill"        data-tf="5xx"    onclick="setTreeFilter('5xx',this)">5xx</div>
+      <div class="log-pill"        data-tf="static" onclick="setTreeFilter('static',this)">Static</div>
+      <div class="log-pill"        data-tf="null"   onclick="setTreeFilter('null',this)">Silent</div>
+    </div>
+    <div id="tree-count" style="font-size:10px;color:var(--text-dim);white-space:nowrap;flex-shrink:0;"></div>
+    <div id="tree-sort-btn" class="log-pill" onclick="toggleTreeSort(this)" style="flex-shrink:0;display:flex;align-items:center;gap:4px;">
+      ⇅ A–Z
+    </div>
+  </div>
+  <!-- tree body -->
+  <div id="tree-body"></div>
+</div>
+
+<style>
+/* ── TREE VIEW ── */
+/* ── TREE VIEW ── */
+#tree-view {
+  display: none;
+  flex: 1;
+  overflow: hidden;
+  flex-direction: column;
+  background: var(--bg);
+  min-height: 0;
+}
+#tree-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#tree-body::-webkit-scrollbar { width: 5px; }
+#tree-body::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+.tree-domain-row {
+  display: flex;
+  flex-direction: column;
+  border: 1.5px solid #0ea5e950;
+  border-radius: 10px;
+  overflow: visible;
+  flex-shrink: 0;
+}
+.tree-domain-header {
+  background: linear-gradient(135deg, #0a1628 0%, #0f2040 100%);
+  border-bottom: 1.5px solid #0ea5e950;
+  border-radius: 10px 10px 0 0;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.tree-domain-row.is-collapsed > .tree-domain-header {
+  border-bottom: none;
+  border-radius: 10px;
+}
+.tree-domain-header:hover { background: linear-gradient(135deg, #0c1e38 0%, #132848 100%); }
+.tree-domain-icon { font-size: 14px; flex-shrink: 0; }
+.tree-domain-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: #38bdf8;
+  flex: 1;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tree-domain-count {
+  font-size: 10px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  background: rgba(14,165,233,0.1);
+  border: 1px solid rgba(14,165,233,0.3);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+.tree-domain-chevron {
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  transition: transform 0.2s;
+  margin-left: 2px;
+  line-height: 1;
+}
+.tree-domain-chevron.collapsed { transform: rotate(-90deg); }
+.tree-endpoints-wrap {
+  background: var(--surface);
+  border-radius: 0 0 8px 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  overflow: hidden;
+}
+.tree-endpoints-wrap.tree-collapsed { display: none; }
+.tree-ep-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.tree-ep-row:hover { background: var(--surface2); }
+.tree-ep-row:hover .tree-ep-path { color: var(--text-bright); }
+.tree-ep-indicator {
+  width: 3px;
+  flex-shrink: 0;
+  background: var(--gray);
+}
+.tree-ep-indicator.s2 { background: var(--green); }
+.tree-ep-indicator.s3 { background: var(--yellow); }
+.tree-ep-indicator.s4 { background: var(--red); }
+.tree-ep-indicator.s5 { background: var(--orange); }
+.tree-ep-indicator.snull { background: var(--gray); opacity: 0.4; }
+.tree-ep-main {
+  flex: 1;
+  padding: 7px 10px;
+  min-width: 0;
+}
+.tree-ep-path {
+  font-size: 11px;
+  color: var(--blue);
+  word-break: break-all;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+.tree-ep-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.tree-tag {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.03em;
+}
+.tree-tag-method { background: var(--green-dim); color: var(--green); }
+.tree-tag-method.m-POST   { background: var(--blue-dim); color: var(--blue); }
+.tree-tag-method.m-PUT    { background: var(--yellow-dim); color: var(--yellow); }
+.tree-tag-method.m-PATCH  { background: var(--yellow-dim); color: var(--orange); }
+.tree-tag-method.m-DELETE { background: var(--red-dim); color: var(--red); }
+.tree-tag-method.m-HEAD, .tree-tag-method.m-OPTIONS { background: rgba(120,120,180,0.15); color: var(--text-dim); }
+.tree-tag-status { font-size: 9px; font-weight: 700; color: var(--green); }
+.tree-tag-status.s3 { color: var(--yellow); }
+.tree-tag-status.s4 { color: var(--red); }
+.tree-tag-status.s5 { color: var(--orange); }
+.tree-tag-api  { background: rgba(124,58,237,0.2); border: 1px solid #7c3aed; color: #a78bfa; font-size:9px; padding:1px 5px; border-radius:3px; }
+.tree-tag-static { background: rgba(51,65,85,0.4); border:1px solid #334155; color:#94a3b8; font-size:9px; padding:1px 5px; border-radius:3px; }
+.tree-tag-null { color:var(--gray); font-size:9px; }
+.tree-ep-row-empty {
+  padding: 16px;
+  color: var(--text-dim);
+  font-size: 11px;
+  text-align: center;
+  grid-column: 1 / -1;
+}
+#tree-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  gap: 10px;
+  color: var(--text-dim);
+}
+</style>
+
+<!-- LOG DETAIL MODAL -->
+<div id="log-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:300;align-items:center;justify-content:center;">
+  <div id="log-modal" style="
+    background:var(--surface);border:1px solid var(--border-bright);border-radius:14px;
+    width:min(520px,95vw);max-height:85vh;display:flex;flex-direction:column;
+    box-shadow:0 24px 64px rgba(0,0,0,0.7);overflow:hidden;animation:modal-in 0.18s ease;">
+    <div id="log-modal-header" style="
+      padding:14px 16px 12px;border-bottom:1px solid var(--border);
+      display:flex;align-items:flex-start;gap:10px;flex-shrink:0;background:var(--surface2);">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <div id="log-modal-url" style="font-size:11px;color:var(--blue);font-weight:500;word-break:break-all;line-height:1.6;"></div>
+          <button id="log-modal-copy" title="Copy URL" onclick="copyLogModalUrl()" style="
+            flex-shrink:0;background:none;border:1px solid var(--border);color:var(--text-dim);
+            cursor:pointer;font-size:11px;padding:2px 7px;border-radius:4px;transition:all 0.15s;white-space:nowrap;">⎘</button>
+        </div>
+        <div id="log-modal-badges" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      </div>
+      <button onclick="closeLogModal()" style="
+        background:none;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;
+        font-size:16px;line-height:1;padding:4px 6px;border-radius:5px;flex-shrink:0;transition:all 0.15s;"
+        onmouseover="this.style.borderColor='var(--border-bright)';this.style.color='var(--text)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">✕</button>
+    </div>
+    <div id="log-modal-body" style="flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:16px;"></div>
+  </div>
+</div>
+<style>
+@keyframes modal-in {
+  from { opacity:0; transform:scale(0.96) translateY(8px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+#log-modal-body::-webkit-scrollbar { width:4px; }
+#log-modal-body::-webkit-scrollbar-thumb { background:var(--border-bright);border-radius:2px; }
+</style>
+
+<!-- TOOLTIP -->
+<div id="tooltip">
+  <div class="tt-url" id="tt-url"></div>
+  <div class="tt-null" id="tt-null" style="display:none">⚫ No response captured (silent)</div>
+  <div class="tt-methods" id="tt-methods"></div>
+  <div class="tt-ct" id="tt-ct"></div>
+  <div class="tt-hint">Click to inspect · Drag to move</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let data = null;
+let nodes = [];
+let edges = [];
+let transform = { x: 0, y: 0, scale: 1 };
+
+// Interaction state
+let dragMode = null;   // null | 'canvas' | 'node'
+let dragNode = null;   // node being dragged
+let dragStart = { x: 0, y: 0 };
+let lastMouseWorld = { x: 0, y: 0 };
+
+let selectedNode = null;
+let hoveredNode = null;
+let activeFilter = 'all';
+let graphSearch = '';      // keyword search string
+let activeFiletype = null; // e.g. 'json','html','js' or null
+let focusedDomain = null; // FQDN string or null
+let focusedCluster = null; // cluster node id or null
+let nodeMap = {}; // id → node for fast lookup
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+
+// ══════════════════════════════════════════
+//  DEMO DATA
+// ══════════════════════════════════════════
+function getDemoData() {
+  return {
+    "api_scores": {
+      "https://api.wepwn.ma/auth/verify": 3,
+      "https://api.wepwn.ma/auth/submit-report": 3,
+      "https://api.wepwn.ma/auth/login": 3,
+      "https://api.wepwn.ma/auth/signup": 3,
+      "https://app.wepwn.ma/register": 1.5,
+      "https://app.wepwn.ma/dashboard": 1
+    },
+    "endpoints": {
+      "https://app.wepwn.ma/ico.png": {
+        "url": "https://app.wepwn.ma/ico.png",
+        "is_api": false, "api_score": 0,
+        "final_location": "https://app.wepwn.ma/ico.png",
+        "headers": { "Content-Type": "image/png", "Server": "nginx/1.24.0", "Cache-Control": "max-age=3600" },
+        "requests": { "GET": { "code": 200, "message": "OK", "content_type": "image/png" }, "HEAD": { "code": 200, "message": "OK", "content_type": "image/png" } }
+      },
+      "https://app.wepwn.ma/assets/index-BDGDUxYE.js": {
+        "url": "https://app.wepwn.ma/assets/index-BDGDUxYE.js",
+        "is_api": false, "api_score": 0,
+        "final_location": "https://app.wepwn.ma/assets/index-BDGDUxYE.js",
+        "headers": { "Content-Type": "application/javascript", "Cache-Control": "immutable,max-age=31536000" },
+        "requests": { "GET": { "code": 200, "message": "OK", "content_type": "application/javascript" } }
+      },
+      "https://app.wepwn.ma/register": {
+        "url": "https://app.wepwn.ma/register",
+        "is_api": true, "api_score": 1.5,
+        "final_location": "https://app.wepwn.ma/register",
+        "headers": { "Content-Type": "text/html; charset=utf-8", "X-Frame-Options": "DENY" },
+        "requests": { "GET": { "code": 200, "message": "OK", "content_type": "text/html" }, "POST": { "code": 422, "message": "Unprocessable Entity", "content_type": "application/json" } }
+      },
+      "https://app.wepwn.ma/dashboard": {
+        "url": "https://app.wepwn.ma/dashboard",
+        "is_api": true, "api_score": 1,
+        "final_location": "https://app.wepwn.ma/dashboard",
+        "headers": { "Content-Type": "text/html; charset=utf-8", "Set-Cookie": "session=...; HttpOnly; Secure", "Strict-Transport-Security": "max-age=31536000" },
+        "requests": { "GET": { "code": 200, "message": "OK", "content_type": "text/html" }, "POST": { "code": 403, "message": "Forbidden", "content_type": "application/json" } }
+      },
+      "https://app.wepwn.ma/dashboard/programs": {
+        "url": "https://app.wepwn.ma/dashboard/programs", "is_api": false, "api_score": 0,
+        "headers": { "Content-Type": "text/html" },
+        "requests": { "GET": { "code": 200, "message": "OK", "content_type": "text/html" }, "POST": { "code": 405, "message": "Method Not Allowed" } }
+      },
+      "https://app.wepwn.ma/dashboard/inbox": {
+        "url": "https://app.wepwn.ma/dashboard/inbox", "is_api": false, "api_score": 0,
+        "headers": {}, "requests": { "GET": { "code": 200, "message": "OK", "content_type": "text/html" } }
+      },
+      "https://app.wepwn.ma/dashboard/logout": {
+        "url": "https://app.wepwn.ma/dashboard/logout", "is_api": false, "api_score": 0,
+        "headers": { "Location": "https://app.wepwn.ma/" },
+        "requests": { "GET": { "code": 302, "message": "Found" }, "POST": { "code": 302, "message": "Found" } }
+      },
+      "https://api.wepwn.ma/auth/verify": {
+        "url": "https://api.wepwn.ma/auth/verify", "is_api": true, "api_score": 3,
+        "headers": {}, "requests": {}
+      },
+      "https://api.wepwn.ma/auth/submit-report": {
+        "url": "https://api.wepwn.ma/auth/submit-report", "is_api": true, "api_score": 3,
+        "headers": { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        "requests": { "GET": { "code": 401, "message": "Unauthorized", "content_type": "application/json" }, "POST": { "code": 200, "message": "OK", "content_type": "application/json" } }
+      },
+      "https://api.wepwn.ma/auth/login": {
+        "url": "https://api.wepwn.ma/auth/login", "is_api": true, "api_score": 3,
+        "headers": { "Content-Type": "application/json", "Set-Cookie": "token=...; HttpOnly" },
+        "requests": { "POST": { "code": 200, "message": "OK", "content_type": "application/json" }, "GET": { "code": 405, "message": "Method Not Allowed" } }
+      },
+      "https://api.wepwn.ma/auth/signup": {
+        "url": "https://api.wepwn.ma/auth/signup", "is_api": true, "api_score": 3,
+        "headers": { "Content-Type": "application/json" },
+        "requests": {}
+      },
+      "https://status.wepwn.ma": {
+        "url": "https://status.wepwn.ma", "is_api": false, "api_score": 0,
+        "headers": { "Content-Type": "text/html" },
+        "requests": { "GET": { "code": 200, "message": "OK", "content_type": "text/html" } }
+      }
+    }
+  };
+}
+
+// ══════════════════════════════════════════
+//  LOAD
+// ══════════════════════════════════════════
+document.getElementById('file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      data = JSON.parse(ev.target.result);
+      initGraph();
+    } catch(err) { alert('Invalid JSON: ' + err.message); }
+  };
+  reader.readAsText(file);
+});
+
+function loadDemo() {
+  data = getDemoData();
+  initGraph();
+}
+
+// ══════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════
+function getDomain(url) {
+  try {
+    const h = new URL(url).hostname;
+    // strip trailing dots, reject non-domain placeholders
+    const clean = h.replace(/\.+$/, '');
+    return clean || url;
+  } catch { return url; }
+}
+
+function isStaticAsset(url) {
+  return /\.(png|jpg|jpeg|gif|svg|webp|ico|mp4|webm|woff|woff2|otf|ttf|css|js|map)(\?|$)/i.test(url);
+}
+
+function isNullEndpoint(endpoint) {
+  const reqs = endpoint.requests || {};
+  const entries = Object.entries(reqs);
+  if (entries.length === 0) return true;
+  return entries.every(([, d]) => !d || !d.code);
+}
+
+function getBestStatus(endpoint) {
+  const reqs = endpoint.requests || {};
+  const codes = Object.values(reqs).map(r => r && (parseInt(r.code) || null)).filter(Boolean);
+  if (!codes.length) return null;
+  const ok = codes.find(c => c >= 200 && c < 300);
+  return ok || codes[0];
+}
+
+function getContentType(endpoint) {
+  const ct = endpoint.headers?.['Content-Type'] || endpoint.headers?.['content-type'] || '';
+  const methods = Object.values(endpoint.requests || {});
+  const methodCt = methods.find(m => m && m.content_type)?.content_type || '';
+  return ct || methodCt;
+}
+
+function shortCt(ct) {
+  if (!ct) return '';
+  if (ct.includes('json')) return 'json';
+  if (ct.includes('html')) return 'html';
+  if (ct.includes('javascript')) return 'js';
+  if (ct.includes('css')) return 'css';
+  if (ct.includes('image')) return ct.split('/')[1]?.split(';')[0] || 'img';
+  if (ct.includes('video')) return 'video';
+  if (ct.includes('font')) return 'font';
+  return ct.split(';')[0].split('/').pop();
+}
+
+function nodeColor(ep, status) {
+  if (isNullEndpoint(ep)) return '#374151';
+  if (ep.is_api) return '#7c3aed';
+  if (status && status >= 400 && status < 500) return '#f43f5e';
+  if (status && status >= 300 && status < 400) return '#f59e0b';
+  if (isStaticAsset(ep.url)) return '#334155';
+  return '#0ea5e9';
+}
+
+function nodeStroke(ep) {
+  if (isNullEndpoint(ep)) return 'rgba(100,116,139,0.4)';
+  if (ep.is_api) return '#a78bfa';
+  return 'rgba(255,255,255,0.12)';
+}
+
+function nodeRadius(ep) {
+  if (isNullEndpoint(ep)) return 6;
+  if (ep.is_api && ep.api_score >= 2) return 14;
+  if (ep.is_api) return 11;
+  return 7;
+}
+
+function statusClass(code) {
+  const c = parseInt(code);
+  if (!c) return '';
+  return `s-${Math.floor(c / 100)}`;
+}
+
+function statusColor(code) {
+  const c = parseInt(code);
+  if (!c) return 'var(--text-dim)';
+  if (c < 300) return 'var(--green)';
+  if (c < 400) return 'var(--yellow)';
+  if (c < 500) return 'var(--red)';
+  return 'var(--orange)';
+}
+
+// ══════════════════════════════════════════
+//  GRAPH INIT
+// ══════════════════════════════════════════
+function initGraph() {
+  nodes = [];
+  edges = [];
+  nodeMap = {};
+  selectedNode = null;
+  focusedDomain = null;
+  focusedCluster = null;
+  userHasInteracted = false;
+  closePanel();
+  stopSim();
+
+  const endpoints = data.endpoints || {};
+  const domainMap = {};
+
+  const domains = [...new Set(Object.keys(endpoints).map(getDomain))];
+  const domainR = Math.max(220, Math.min(domains.length * 65, 1800));
+
+  domains.forEach((d, i) => {
+    const angle = (i / domains.length) * Math.PI * 2 - Math.PI / 2;
+    const node = {
+      id: 'domain:' + d,
+      label: d,
+      type: 'domain',
+      x: Math.cos(angle) * domainR,
+      y: Math.sin(angle) * domainR,
+      radius: 36,
+      color: '#0f2027',
+      strokeColor: '#0ea5e9',
+      endpoint: null,
+      vx: 0, vy: 0, pinned: false
+    };
+    nodes.push(node);
+    nodeMap[node.id] = node;
+    domainMap[d] = node;
+  });
+
+  // Group endpoints by domain, then split large domains into clusters of max 35
+  const CLUSTER_MAX = 25;
+  const byDomain = {};
+  Object.entries(endpoints).forEach(([url, ep]) => {
+    const d = getDomain(url);
+    if (!byDomain[d]) byDomain[d] = [];
+    byDomain[d].push([url, ep]);
+  });
+
+  Object.entries(byDomain).forEach(([domain, eps]) => {
+    const domNode = domainMap[domain];
+    const numClusters = Math.ceil(eps.length / CLUSTER_MAX);
+
+    // For each cluster, create an optional cluster-hub node (only if >1 cluster)
+    const clusterHubs = [];
+    // Scale hub ring radius so hubs don't bunch up: minimum arc spacing of ~220px between hubs
+    const hubDist = numClusters <= 2 ? 260 : Math.max(260, (numClusters * 220) / (2 * Math.PI));
+    for (let ci = 0; ci < numClusters; ci++) {
+      if (numClusters === 1) {
+        // Only one cluster — no hub needed, use domain node directly
+        clusterHubs.push(domNode);
+      } else {
+        // Place cluster hubs in a ring around the domain node
+        const hubAngle = (ci / numClusters) * Math.PI * 2 - Math.PI / 2;
+        const hub = {
+          id: 'cluster:' + domain + ':' + ci,
+          label: domain + ' [' + (ci + 1) + '/' + numClusters + ']',
+          type: 'cluster',
+          x: (domNode?.x || 0) + Math.cos(hubAngle) * hubDist,
+          y: (domNode?.y || 0) + Math.sin(hubAngle) * hubDist,
+          radius: 20,
+          color: '#0a1a2a',
+          strokeColor: '#0ea5e9',
+          endpoint: null,
+          vx: 0, vy: 0, pinned: false
+        };
+        nodes.push(hub);
+        nodeMap[hub.id] = hub;
+        clusterHubs.push(hub);
+        // Edge from domain to cluster hub
+        if (domNode) edges.push({ from: 'domain:' + domain, to: hub.id });
+      }
+    }
+
+    // Place endpoints into their cluster
+    eps.forEach(([url, ep], idx) => {
+      const ci = Math.floor(idx / CLUSTER_MAX);
+      const hub = clusterHubs[ci];
+      const posInCluster = idx % CLUSTER_MAX;
+      const totalInCluster = Math.min(CLUSTER_MAX, eps.length - ci * CLUSTER_MAX);
+      // Arrange in a ring around hub — use a wider spread so endpoints don't overlap adjacent hubs
+      const angle = (posInCluster / totalInCluster) * Math.PI * 2 + (ci * 0.3);
+      const dist = 120 + Math.random() * 60;
+      const status = getBestStatus(ep);
+      const node = {
+        id: url,
+        label: url.replace(/https?:\/\/[^/]+/, '') || '/',
+        type: 'endpoint',
+        x: (hub?.x || 0) + Math.cos(angle) * dist,
+        y: (hub?.y || 0) + Math.sin(angle) * dist,
+        radius: nodeRadius(ep),
+        color: nodeColor(ep, status),
+        strokeColor: nodeStroke(ep),
+        endpoint: ep,
+        status,
+        vx: 0, vy: 0, pinned: false
+      };
+      nodes.push(node);
+      nodeMap[node.id] = node;
+      // Edge from cluster hub (or domain if single cluster) to endpoint
+      const parentId = numClusters === 1 ? 'domain:' + domain : hub.id;
+      if (hub) edges.push({ from: parentId, to: url });
+    });
+  });
+
+  logCollapsed = {};
+  // Skip blocking force layout for large graphs — just kick the async sim instead
+  if (nodes.length < 200) {
+    runForceLayout(40);
+  }
+  buildAdjacency();
+  updateStats();
+  document.getElementById('empty-state').classList.add('hidden');
+  buildFiletypePills();
+  // reset graph search state on new load
+  graphSearch = '';
+  activeFiletype = null;
+  const si = document.getElementById('graph-search');
+  if (si) si.value = '';
+  document.getElementById('graph-search-clear')?.classList.remove('visible');
+  document.getElementById('graph-filter-match').textContent = '';
+  // reset status pills to All
+  document.querySelectorAll('#filterbar-pills > .filter-pill').forEach(p => p.classList.remove('active'));
+  const allPill = document.querySelector('#filterbar-pills .filter-pill[data-filter="all"]');
+  if (allPill) allPill.classList.add('active');
+  activeFilter = 'all';
+  showDragHint();
+  // Always resetView so initial scale fits whatever ring size was placed
+  resetView();
+  render();
+  kickSim(null);
+  if (currentView === 'log') renderLog();
+  if (currentView === 'tree') renderTree();
+}
+
+function showDragHint() {
+  const hint = document.getElementById('drag-hint');
+  hint.classList.remove('fade');
+  setTimeout(() => hint.classList.add('fade'), 3000);
+}
+
+// ══════════════════════════════════════════
+//  FORCE LAYOUT — always-on Obsidian-style
+// ══════════════════════════════════════════
+const REPULSION = 10000;
+const IDEAL_EDGE = 260;
+const DAMPING = 0.82;        // lower = less rubberbanding
+const SPEED = 0.6;
+const DRAG_RIPPLE = 0.06;    // reduced so children don't fly far when dragging parent
+const DRAG_LERP   = 0.07;    // 0=no movement, 1=instant snap — lower = more resistance
+
+// Build adjacency for fast neighbor lookup
+let adjacency = {}; // nodeId → Set of neighbor nodeIds
+
+function buildAdjacency() {
+  adjacency = {};
+  nodes.forEach(n => { adjacency[n.id] = new Set(); });
+  edges.forEach(e => {
+    if (adjacency[e.from]) adjacency[e.from].add(e.to);
+    if (adjacency[e.to])   adjacency[e.to].add(e.from);
+  });
+}
+
+function applyForces(pinnedId) {
+  // ── lerp dragged node toward cursor target (resistance feel) ──
+  if (dragNode) {
+    dragNode.x += (dragNodeTarget.x - dragNode.x) * DRAG_LERP;
+    dragNode.y += (dragNodeTarget.y - dragNode.y) * DRAG_LERP;
+    dragNode.vx = 0;
+    dragNode.vy = 0;
+  }
+
+  // ── repulsion between every pair ──
+  // Use a fixed distance cutoff large enough that endpoint nodes (radius=7) always repel
+  const repulsionCutoff = 400;
+  for (let a = 0; a < nodes.length; a++) {
+    for (let b = a + 1; b < nodes.length; b++) {
+      const na = nodes[a], nb = nodes[b];
+      if (na.id === pinnedId || nb.id === pinnedId) continue;
+      const dx = nb.x - na.x, dy = nb.y - na.y;
+      const dist2 = dx*dx + dy*dy || 0.01;
+      if (dist2 > repulsionCutoff * repulsionCutoff) continue;
+      const dist  = Math.sqrt(dist2);
+      const force = Math.min(REPULSION / dist2, 8);
+      const fx = (dx / dist) * force, fy = (dy / dist) * force;
+      if (na.id !== pinnedId) { na.vx -= fx; na.vy -= fy; }
+      if (nb.id !== pinnedId) { nb.vx += fx; nb.vy += fy; }
+    }
+  }
+
+  // ── spring attraction along edges ──
+  edges.forEach(e => {
+    const from = nodeMap[e.from];
+    const to   = nodeMap[e.to];
+    if (!from || !to) return;
+    const dx = to.x - from.x, dy = to.y - from.y;
+    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    const force = (dist - IDEAL_EDGE) * 0.028;
+    const fx = (dx / dist) * force, fy = (dy / dist) * force;
+    if (from.id !== pinnedId) { from.vx += fx; from.vy += fy; }
+    if (to.id   !== pinnedId) { to.vx   -= fx; to.vy   -= fy; }
+  });
+
+  // No center gravity — spring forces provide cohesion
+
+  // ── integrate ──
+  nodes.forEach(n => {
+    if (n.id === pinnedId) return;
+    // Clamp velocity to prevent explosion -> NaN
+    const maxV = 80;
+    n.vx = Math.max(-maxV, Math.min(maxV, n.vx));
+    n.vy = Math.max(-maxV, Math.min(maxV, n.vy));
+    // Guard against NaN (shouldn't happen but keeps graph alive if it does)
+    if (!isFinite(n.x) || !isFinite(n.y)) { n.x = (Math.random()-0.5)*200; n.y = (Math.random()-0.5)*200; n.vx = 0; n.vy = 0; }
+    n.x  += n.vx * SPEED;
+    n.y  += n.vy * SPEED;
+    n.vx *= DAMPING;
+    n.vy *= DAMPING;
+  });
+}
+
+// Measure total kinetic energy to auto-stop when settled
+function kineticEnergy() {
+  return nodes.reduce((s, n) => s + n.vx*n.vx + n.vy*n.vy, 0);
+}
+
+function runForceLayout(iterations) {
+  for (let i = 0; i < iterations; i++) applyForces(null);
+}
+
+// ── simulation loop ──
+let simActive = false;
+let simFrameId = null;
+let userHasInteracted = false; // set true on first pan/zoom, suppresses auto-resetView
+
+function startSim(pinnedId) {
+  if (simActive) return;
+  simActive = true;
+  document.getElementById('sim-btn').classList.add('active');
+  let isInitialSettle = !pinnedId && nodes.length > 200;
+  let tickCount = 0;
+  function tick() {
+    const pid = dragNode ? dragNode.id : null;
+    applyForces(pid);
+    tickCount++;
+    render();
+    const keThreshold = Math.max(0.004, nodes.length * 0.0006);
+    if (simActive && kineticEnergy() > keThreshold) {
+      simFrameId = requestAnimationFrame(tick);
+    } else {
+      simActive = false;
+      document.getElementById('sim-btn').classList.remove('active');
+      const notice = document.getElementById('settling-notice');
+      if (notice) notice.style.display = 'none';
+      if (!userHasInteracted) resetView(); // only auto-fit if user hasn't panned/zoomed
+      render();
+    }
+  }
+  simFrameId = requestAnimationFrame(tick);
+}
+
+function stopSim() {
+  simActive = false;
+  if (simFrameId) cancelAnimationFrame(simFrameId);
+  document.getElementById('sim-btn').classList.remove('active');
+  const notice = document.getElementById('settling-notice');
+  if (notice) notice.style.display = 'none';
+}
+
+function toggleSim() {
+  if (simActive) { stopSim(); } else { kickSim(); }
+}
+
+// Kick the sim with a gentle nudge so it actually runs
+function kickSim(pinnedId) {
+  if (!simActive) {
+    const nudge = nodes.length > 200 ? 2.5 : 0.5;
+    nodes.forEach(n => {
+      if (n.id === pinnedId) return;
+      n.vx += (Math.random()-0.5) * nudge;
+      n.vy += (Math.random()-0.5) * nudge;
+    });
+    if (nodes.length > 200) {
+      const notice = document.getElementById('settling-notice');
+      const countEl = document.getElementById('settling-count');
+      if (notice) { notice.style.display = 'block'; }
+      if (countEl) countEl.textContent = nodes.length;
+    }
+    startSim(pinnedId);
+  }
+}
+
+function relayout() {
+  if (!nodes.length) return;
+  stopSim();
+  nodes.forEach(n => { n.vx = (Math.random()-0.5)*4; n.vy = (Math.random()-0.5)*4; });
+  startSim(null);
+}
+
+// ══════════════════════════════════════════
+//  STATS & FILTER
+// ══════════════════════════════════════════
+function updateStats() {
+  const eps = Object.values(data.endpoints || {});
+  document.getElementById('stat-total').textContent = eps.length;
+  document.getElementById('stat-api').textContent = eps.filter(e => e.is_api).length;
+  let c2=0, c4=0, c5=0, cnull=0;
+  eps.forEach(ep => {
+    if (isNullEndpoint(ep)) { cnull++; return; }
+    const s = getBestStatus(ep);
+    if (!s) return;
+    if (s >= 200 && s < 300) c2++;
+    else if (s >= 400 && s < 500) c4++;
+    else if (s >= 500) c5++;
+  });
+  document.getElementById('stat-2xx').textContent = c2;
+  document.getElementById('stat-4xx').textContent = c4;
+  document.getElementById('stat-5xx').textContent = c5;
+  document.getElementById('stat-null').textContent = cnull;
+}
+
+function toggleFilterPills() {
+  const pills = document.getElementById('filterbar-pills');
+  const btn   = document.getElementById('filter-toggle-btn');
+  const open  = pills.classList.toggle('open');
+  btn.classList.toggle('active', open);
+}
+
+function updateFilterBtnState() {
+  const btn = document.getElementById('filter-toggle-btn');
+  if (!btn) return;
+  const nonDefault = activeFilter !== 'all' || activeFiletype !== null;
+  btn.classList.toggle('has-filter', nonDefault);
+}
+
+function setFilter(f, el) {
+  activeFilter = f;
+  activeFiletype = null;
+  // clear filetype pill active states
+  document.querySelectorAll('#filetype-pills .filter-pill').forEach(p => p.classList.remove('active'));
+  // update status pills
+  document.querySelectorAll('#filterbar-pills > .filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  updateFilterBtnState();
+  updateGraphSearchCount();
+  requestAnimationFrame(render);
+}
+
+function setFiletype(ft, el) {
+  if (activeFiletype === ft) {
+    // toggle off
+    activeFiletype = null;
+    el.classList.remove('active');
+  } else {
+    activeFiletype = ft;
+    document.querySelectorAll('#filetype-pills .filter-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+  }
+  updateFilterBtnState();
+  updateGraphSearchCount();
+  requestAnimationFrame(render);
+}
+
+function onGraphSearch(val) {
+  graphSearch = val.trim().toLowerCase();
+  const clearBtn = document.getElementById('graph-search-clear');
+  clearBtn.classList.toggle('visible', graphSearch.length > 0);
+  updateGraphSearchCount();
+  requestAnimationFrame(render);
+}
+
+function clearGraphSearch() {
+  graphSearch = '';
+  const inp = document.getElementById('graph-search');
+  if (inp) inp.value = '';
+  document.getElementById('graph-search-clear').classList.remove('visible');
+  document.getElementById('graph-filter-match').textContent = '';
+  document.getElementById('graph-filter-match').className = '';
+  requestAnimationFrame(render);
+}
+
+function updateGraphSearchCount() {
+  const matchEl = document.getElementById('graph-filter-match');
+  if (!matchEl) return;
+  if (!graphSearch && activeFilter === 'all' && !activeFiletype) {
+    matchEl.textContent = '';
+    matchEl.className = '';
+    return;
+  }
+  const count = nodes.filter(n => n.type === 'endpoint' && nodeVisible(n)).length;
+  const total = nodes.filter(n => n.type === 'endpoint').length;
+  matchEl.textContent = count + '/' + total;
+  matchEl.className = count === 0 ? 'no-results' : 'has-results';
+}
+
+function nodeMatchesSearch(node) {
+  if (!graphSearch) return true;
+  const ep = node.endpoint;
+  // search against: url, path, content-type, method names, status codes, headers
+  const haystack = [
+    ep.url,
+    node.label,
+    getContentType(ep),
+    ...Object.keys(ep.requests || {}),
+    ...Object.values(ep.requests || {}).map(r => String(r?.code || '')),
+    ...Object.keys(ep.headers || {}),
+    ...Object.values(ep.headers || {}).map(v => String(v)),
+  ].join(' ').toLowerCase();
+  return haystack.includes(graphSearch);
+}
+
+function nodeMatchesFiletype(node) {
+  if (!activeFiletype) return true;
+  const ep = node.endpoint;
+  if (!ep) return true;
+  const ct = getContentType(ep).toLowerCase();
+  const url = ep.url.toLowerCase();
+  // match content-type OR file extension in URL
+  switch (activeFiletype) {
+    case 'json':  return ct.includes('json') || url.match(/\.json(\?|$)/);
+    case 'html':  return ct.includes('html') || url.match(/\.html?(\?|$)/);
+    case 'js':    return ct.includes('javascript') || url.match(/\.js(\?|$)/);
+    case 'css':   return ct.includes('css') || url.match(/\.css(\?|$)/);
+    case 'image': return ct.includes('image') || url.match(/\.(png|jpg|jpeg|gif|svg|webp|ico)(\?|$)/i);
+    case 'font':  return ct.includes('font') || url.match(/\.(woff2?|otf|ttf|eot)(\?|$)/i);
+    case 'video': return ct.includes('video') || url.match(/\.(mp4|webm|ogg|mov)(\?|$)/i);
+    case 'text':  return (ct.includes('text') && !ct.includes('html') && !ct.includes('css')) || url.match(/\.(txt|md|csv)(\?|$)/i);
+    default:      return true;
+  }
+}
+
+function nodeVisible(node) {
+  if (node.type === 'domain' || node.type === 'cluster') return true;
+  const ep = node.endpoint;
+  if (!ep) return true;
+
+  // status / type filter
+  let passesFilter = true;
+  if (activeFilter === 'api')    passesFilter = ep.is_api;
+  else if (activeFilter === 'static') passesFilter = isStaticAsset(ep.url);
+  else if (activeFilter === 'null')   passesFilter = isNullEndpoint(ep);
+  else if (activeFilter === '2xx')    passesFilter = node.status >= 200 && node.status < 300;
+  else if (activeFilter === '3xx')    passesFilter = node.status >= 300 && node.status < 400;
+  else if (activeFilter === '4xx')    passesFilter = node.status >= 400 && node.status < 500;
+  else if (activeFilter === '5xx')    passesFilter = node.status >= 500;
+
+  if (!passesFilter) return false;
+  if (!nodeMatchesFiletype(node)) return false;
+  if (!nodeMatchesSearch(node)) return false;
+  return true;
+}
+
+// Build filetype pills from actual data
+function buildFiletypePills() {
+  const detected = new Set();
+  nodes.forEach(n => {
+    if (n.type !== 'endpoint' || !n.endpoint) return;
+    const ct = getContentType(n.endpoint).toLowerCase();
+    const url = n.endpoint.url.toLowerCase();
+    if (ct.includes('json') || url.match(/\.json(\?|$)/))              detected.add('json');
+    if (ct.includes('php') || url.match(/\.json(\?|$)/))              detected.add('php');
+    if (ct.includes('html') || url.match(/\.html?(\?|$)/))             detected.add('html');
+    if (ct.includes('javascript') || url.match(/\.js(\?|$)/))          detected.add('js');
+    if (ct.includes('css') || url.match(/\.css(\?|$)/))                detected.add('css');
+    if (ct.includes('image') || url.match(/\.(png|jpg|jpeg|gif|svg|webp|ico)(\?|$)/i)) detected.add('image');
+    if (ct.includes('font') || url.match(/\.(woff2?|otf|ttf|eot)(\?|$)/i))            detected.add('font');
+    if (ct.includes('video') || url.match(/\.(mp4|webm|ogg|mov)(\?|$)/i))             detected.add('video');
+    if (ct.includes('text') && !ct.includes('html') && !ct.includes('css'))             detected.add('text');
+  });
+
+  const labels = { json:'JSON', html:'HTML', js:'JS', css:'CSS', image:'Images', font:'Fonts', video:'Video', text:'Text', php:'PHP' };
+  const wrap = document.getElementById('filetype-pills');
+  const wrapOuter = document.getElementById('filetype-pills-wrap');
+  if (!wrap || detected.size === 0) return;
+  wrap.innerHTML = '';
+  detected.forEach(ft => {
+    const pill = document.createElement('div');
+    pill.className = 'filter-pill';
+    pill.dataset.filetype = ft;
+    pill.textContent = labels[ft] || ft;
+    pill.addEventListener('click', () => setFiletype(ft, pill));
+    wrap.appendChild(pill);
+  });
+  wrapOuter.style.display = 'block';
+}
+
+// ══════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+}
+window.addEventListener('resize', () => { resizeCanvas(); requestAnimationFrame(render); });
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLogModal();
+});
+document.getElementById('log-modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('log-modal-overlay')) closeLogModal();
+});
+resizeCanvas();
+
+function worldToScreen(x, y) {
+  return {
+    x: x * transform.scale + transform.x + canvas.width / 2,
+    y: y * transform.scale + transform.y + canvas.height / 2
+  };
+}
+function screenToWorld(sx, sy) {
+  return {
+    x: (sx - canvas.width / 2 - transform.x) / transform.scale,
+    y: (sy - canvas.height / 2 - transform.y) / transform.scale
+  };
+}
+
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!nodes.length) return;
+  let _culled=0, _drawn=0;
+
+  // Always show all nodes; non-matching are dimmed via globalAlpha in draw loop
+  const visibleNodes = nodes;
+  const visibleIds = new Set(visibleNodes.map(n => n.id));
+
+  // ── edges ──
+  edges.forEach(e => {
+    const from = nodeMap[e.from];
+    const to = nodeMap[e.to];
+    if (!from || !to || !visibleIds.has(e.to)) return;
+    const fs = worldToScreen(from.x, from.y);
+    const ts = worldToScreen(to.x, to.y);
+
+    const toEp = to.endpoint;
+    const isNull = toEp && isNullEndpoint(toEp);
+    const isApi = toEp?.is_api;
+
+    // dim edges not belonging to focused domain/cluster
+    const edgeDomain = to.endpoint ? getDomain(to.id) : (from.type === 'domain' ? from.label : null);
+    let edgeInFocus = true;
+    if (focusedCluster) {
+      edgeInFocus = (from.id === focusedCluster || to.id === focusedCluster) &&
+                    (from.id === focusedCluster || to.id === focusedCluster);
+    } else if (focusedDomain) {
+      edgeInFocus = edgeDomain === focusedDomain;
+    }
+    ctx.globalAlpha = edgeInFocus ? 1 : 0.07;
+
+    ctx.beginPath();
+    ctx.moveTo(fs.x, fs.y);
+    ctx.lineTo(ts.x, ts.y);
+    ctx.strokeStyle = isNull ? 'rgba(100,116,139,0.12)' : isApi ? 'rgba(124,58,237,0.25)' : 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = isApi ? 1.5 : 1;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+
+  // ── nodes ──
+  visibleNodes.forEach(node => {
+    const { x: sx, y: sy } = worldToScreen(node.x, node.y);
+    const r = node.radius * transform.scale;
+
+    // cull off-screen
+    if (sx + r * 8 < 0 || sx - r * 8 > canvas.width || sy + r * 8 < 0 || sy - r * 8 > canvas.height) { _culled++; return; }
+    _drawn++;
+
+    const isSelected = selectedNode?.id === node.id;
+    const isHovered = hoveredNode?.id === node.id;
+    const isDragging = dragNode?.id === node.id;
+    const isNull = node.endpoint && isNullEndpoint(node.endpoint);
+
+    // ── domain/cluster focus + search dimming ──
+    let nodeDomain = node.type === 'domain' ? node.label : node.type === 'cluster' ? node.label.split(' [')[0] : (node.endpoint ? getDomain(node.id) : null);
+    let inFocus = true;
+    if (focusedCluster) {
+      // In focus: the cluster hub itself, its endpoint children, and the parent domain node
+      const clusterNode = nodeMap[focusedCluster];
+      const parentDomainId = clusterNode ? 'domain:' + clusterNode.label.split(' [')[0] : null;
+      const isClusterChild = edges.some(ed => ed.from === focusedCluster && ed.to === node.id);
+      inFocus = node.id === focusedCluster || node.id === parentDomainId || isClusterChild;
+    } else if (focusedDomain) {
+      inFocus = nodeDomain === focusedDomain;
+    }
+    // search/filter: if active, dim non-matching nodes instead of hiding
+    const inSearch = node.type === 'domain' ? true : nodeVisible(node);
+    const hasActiveFilter = graphSearch || activeFilter !== 'all' || activeFiletype;
+    ctx.globalAlpha = !inFocus ? 0.1 : (hasActiveFilter && !inSearch) ? 0.08 : 1;
+
+    // glow
+    if ((node.endpoint?.is_api && !isNull) || isSelected) {
+      ctx.beginPath();
+      ctx.arc(sx, sy, r * 2.4, 0, Math.PI * 2);
+      ctx.fillStyle = isSelected ? 'rgba(167,139,250,0.2)' : 'rgba(124,58,237,0.12)';
+      ctx.fill();
+    }
+
+    // node drag highlight
+    if (isDragging) {
+      ctx.beginPath();
+      ctx.arc(sx, sy, r * 1.8, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(56,189,248,0.15)';
+      ctx.fill();
+    }
+
+    // null nodes: dashed outline style
+    ctx.save();
+    if (isNull && !isSelected) {
+      ctx.setLineDash([3, 3]);
+    }
+
+    // fill
+    ctx.beginPath();
+    ctx.arc(sx, sy, r, 0, Math.PI * 2);
+    ctx.fillStyle = node.color;
+    ctx.fill();
+
+    // stroke
+    ctx.beginPath();
+    ctx.arc(sx, sy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = isDragging ? '#38bdf8' : isSelected ? '#a78bfa' : isHovered ? '#38bdf8' : node.strokeColor;
+    ctx.lineWidth = isDragging ? 2.5 : isSelected ? 2.5 : isHovered ? 2 : 1.5;
+    ctx.stroke();
+    ctx.restore();
+
+    // domain/cluster label inside
+    if (node.type === 'domain' || node.type === 'cluster') {
+      const fs = Math.max(8, Math.min(11, 11 * transform.scale));
+      ctx.font = `bold ${fs}px JetBrains Mono, monospace`;
+      ctx.fillStyle = '#0ea5e9';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // Show full FQDN for domain nodes, short index label for cluster nodes
+      const fqdn = node.type === 'cluster' ? node.label.match(/\[.*\]/)?.[0] || node.label : node.label;
+      const parts = fqdn.split('.');
+      const scaledR = node.radius * transform.scale;
+      if (parts.length >= 3 && ctx.measureText(fqdn).width > scaledR * 1.6) {
+        const sub = parts[0];
+        const rest = parts.slice(1).join('.');
+        const truncSub = (sub.length > 8 ? sub.slice(0,7)+'…' : sub) + '.';
+        const truncRest = rest.length > 10 ? rest.slice(0,9)+'…' : rest;
+        ctx.fillText(truncSub, sx, sy - fs * 0.6);
+        ctx.fillText(truncRest, sx, sy + fs * 0.6);
+      } else {
+        const maxW = scaledR * 1.8;
+        let label = fqdn;
+        while (label.length > 3 && ctx.measureText(label).width > maxW) {
+          label = label.slice(0, -2) + '…';
+        }
+        ctx.fillText(label, sx, sy);
+      }
+    }
+
+    // status dot on endpoint nodes
+    if (node.type === 'endpoint' && !isNull && node.status && transform.scale > 0.4) {
+      const sc = parseInt(node.status);
+      const dotColor = sc < 300 ? '#22d3a0' : sc < 400 ? '#f59e0b' : '#f43f5e';
+      ctx.beginPath();
+      ctx.arc(sx + r * 0.65, sy - r * 0.65, Math.max(2, 3.5 * transform.scale), 0, Math.PI * 2);
+      ctx.fillStyle = dotColor;
+      ctx.fill();
+    }
+
+    // null indicator dot
+    if (node.type === 'endpoint' && isNull && transform.scale > 0.4) {
+      ctx.beginPath();
+      ctx.arc(sx + r * 0.65, sy - r * 0.65, Math.max(2, 3 * transform.scale), 0, Math.PI * 2);
+      ctx.fillStyle = '#64748b';
+      ctx.fill();
+    }
+
+    // label
+    const showLabel = transform.scale > 0.55 || isSelected || isHovered || isDragging;
+    if (showLabel && node.type === 'endpoint') {
+      const rawLabel = node.label || '/';
+      const maxLen = Math.floor(36 / Math.max(0.55, transform.scale));
+      const label = rawLabel.length > maxLen ? rawLabel.slice(0, maxLen - 1) + '…' : rawLabel;
+      const fontSize = Math.max(9, Math.min(12, 10 * transform.scale));
+
+      ctx.font = `${fontSize}px JetBrains Mono, monospace`;
+      const textW = ctx.measureText(label).width;
+
+      // background pill for readability
+      const padX = 5, padY = 3;
+      const bx = sx - textW / 2 - padX;
+      const by = sy + r + 5;
+      const bw = textW + padX * 2;
+      const bh = fontSize + padY * 2;
+
+      ctx.fillStyle = 'rgba(10,10,15,0.88)';
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bw, bh, 3);
+      ctx.fill();
+
+      // subtle border on label pill
+      ctx.strokeStyle = isSelected ? 'rgba(167,139,250,0.4)' : 'rgba(42,42,64,0.7)';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+
+      ctx.fillStyle = isSelected ? '#eeeeff' : isNull ? '#64748b' : node.endpoint?.is_api ? '#c4b5fd' : 'rgba(200,200,232,0.9)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(label, sx, by + padY);
+    }
+    ctx.globalAlpha = 1; // reset after each node
+  });
+  ctx.globalAlpha = 1;
+}
+
+// ══════════════════════════════════════════
+//  INTERACTION
+// ══════════════════════════════════════════
+function getNodeAt(sx, sy) {
+  const w = screenToWorld(sx, sy);
+  let best = null, bestDist = Infinity;
+  nodes.forEach(node => {
+    if (!nodeVisible(node)) return;
+    const dx = node.x - w.x, dy = node.y - w.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const hitR = node.radius + Math.max(8, 8 / transform.scale);
+    if (dist < hitR && dist < bestDist) { best = node; bestDist = dist; }
+  });
+  return best;
+}
+
+let dragNodeTarget = { x: 0, y: 0 }; // where cursor wants the node to go
+let dragStartTime = 0;               // for distinguishing click vs drag
+
+canvas.addEventListener('mousedown', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  const node = getNodeAt(sx, sy);
+
+  if (node && e.button === 0) {
+    dragMode = 'node';
+    dragNode = node;
+    dragStart = { x: e.clientX, y: e.clientY };
+    dragStartTime = Date.now();
+    const w = screenToWorld(sx, sy);
+    dragNodeTarget = { x: w.x, y: w.y };
+    lastMouseWorld = w;
+    canvas.classList.add('dragging-node');
+    // For large hub nodes (domain/cluster), delay sim start until actual movement
+    // to avoid the "auto drag" feel on simple clicks
+    if (node.type !== 'domain' && node.type !== 'cluster') {
+      if (!simActive) startSim(node.id);
+    }
+  } else {
+    dragMode = 'canvas';
+    canvas.classList.add('dragging-canvas');
+    dragStart = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+    userHasInteracted = true;
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+
+  if (dragMode === 'node' && dragNode) {
+    const w = screenToWorld(sx, sy);
+    // Update the target — node will lerp toward this in the sim tick
+    dragNodeTarget.x = w.x;
+    dragNodeTarget.y = w.y;
+
+    // Velocity delta for neighbor ripple (based on target movement, not node)
+    const dvx = (w.x - dragNode.x) * DRAG_RIPPLE;
+    const dvy = (w.y - dragNode.y) * DRAG_RIPPLE;
+    const neighbors = adjacency[dragNode.id];
+    if (neighbors) {
+      neighbors.forEach(nid => {
+        const nb = nodeMap[nid];
+        if (nb && nb.id !== dragNode.id) {
+          nb.vx += dvx;
+          nb.vy += dvy;
+        }
+      });
+    }
+
+    if (!simActive) startSim(dragNode.id);
+    tooltip.style.display = 'none';
+    return;
+  }
+
+  if (dragMode === 'canvas') {
+    transform.x = e.clientX - dragStart.x;
+    transform.y = e.clientY - dragStart.y;
+    requestAnimationFrame(render);
+    tooltip.style.display = 'none';
+    return;
+  }
+
+  // hover
+  const node = getNodeAt(sx, sy);
+  if (node !== hoveredNode) {
+    hoveredNode = node;
+    canvas.style.cursor = node ? 'pointer' : 'grab';
+    if (!simActive) requestAnimationFrame(render);
+  }
+  if (node && node.type === 'endpoint') {
+    showTooltip(e, node);
+  } else {
+    tooltip.style.display = 'none';
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  if (dragMode === 'node' && dragNode) {
+    const moveDist = Math.hypot(e.clientX - dragStart.x, e.clientY - dragStart.y);
+    const holdTime = Date.now() - dragStartTime;
+    // For large nodes (domain/cluster) use a bigger movement threshold since
+    // the sim starts immediately on mousedown and may jitter the cursor position
+    const clickThreshDist = (dragNode.type === 'domain' || dragNode.type === 'cluster') ? 12 : 5;
+    const clickThreshTime = (dragNode.type === 'domain' || dragNode.type === 'cluster') ? 400 : 200;
+    if (moveDist < clickThreshDist && holdTime < clickThreshTime) {
+      selectNode(dragNode);
+    } else if (moveDist >= clickThreshDist) {
+      // release node — give it a little throw velocity then let sim settle
+      const rect = canvas.getBoundingClientRect();
+      const w = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+      dragNode.vx = (w.x - dragNode.x) * 0.4;
+      dragNode.vy = (w.y - dragNode.y) * 0.4;
+    }
+    dragNode = null;
+    canvas.classList.remove('dragging-node');
+    stopSim();
+    kickSim(null);
+  } else if (dragMode === 'canvas') {
+    canvas.classList.remove('dragging-canvas');
+  }
+  dragMode = null;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoveredNode = null;
+  tooltip.style.display = 'none';
+  if (dragMode === 'node' && dragNode) {
+    dragNode = null;
+    dragMode = null;
+    canvas.classList.remove('dragging-node');
+    kickSim(null);
+  } else if (dragMode === 'canvas') {
+    dragMode = null;
+    canvas.classList.remove('dragging-canvas');
+  }
+  if (!simActive) requestAnimationFrame(render);
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left - canvas.width / 2;
+  const my = e.clientY - rect.top - canvas.height / 2;
+  userHasInteracted = true;
+  const delta = -e.deltaY * 0.001;
+  const prevScale = transform.scale;
+  transform.scale = Math.max(0.1, Math.min(5, transform.scale * (1 + delta)));
+  const ratio = transform.scale / prevScale;
+  transform.x = mx - (mx - transform.x) * ratio;
+  transform.y = my - (my - transform.y) * ratio;
+  requestAnimationFrame(render);
+}, { passive: false });
+
+// touch support
+let touchStartDist = null;
+let touchLastMid = null;
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches[0];
+    const sx = t.clientX - rect.left;
+    const sy = t.clientY - rect.top;
+    const node = getNodeAt(sx, sy);
+    if (node) {
+      dragMode = 'node';
+      dragNode = node;
+      dragStart = { x: t.clientX, y: t.clientY };
+      dragStartTime = Date.now();
+      lastMouseWorld = screenToWorld(sx, sy);
+      if (!simActive) startSim(node.id);
+    } else {
+      dragMode = 'canvas';
+      dragStart = { x: t.clientX - transform.x, y: t.clientY - transform.y };
+    }
+  } else if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    touchStartDist = Math.hypot(dx, dy);
+    touchLastMid = {
+      x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+      y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+    };
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 1 && dragMode === 'node' && dragNode) {
+    const rect = canvas.getBoundingClientRect();
+    const t = e.touches[0];
+    const w = screenToWorld(t.clientX - rect.left, t.clientY - rect.top);
+    const dvx = w.x - dragNode.x, dvy = w.y - dragNode.y;
+    dragNode.x = w.x; dragNode.y = w.y;
+    dragNode.vx = 0;  dragNode.vy = 0;
+    const neighbors = adjacency[dragNode.id];
+    if (neighbors) neighbors.forEach(nid => {
+      const nb = nodeMap[nid];
+      if (nb) { nb.vx += dvx * DRAG_RIPPLE; nb.vy += dvy * DRAG_RIPPLE; }
+    });
+    if (!simActive) startSim(dragNode.id);
+  } else if (e.touches.length === 1 && dragMode === 'canvas') {
+    const t = e.touches[0];
+    transform.x = t.clientX - dragStart.x;
+    transform.y = t.clientY - dragStart.y;
+    requestAnimationFrame(render);
+  } else if (e.touches.length === 2 && touchStartDist) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.hypot(dx, dy);
+    const scale = dist / touchStartDist;
+    const mid = {
+      x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+      y: (e.touches[0].clientY + e.touches[1].clientY) / 2
+    };
+    const mx = mid.x - canvas.width / 2;
+    const my = mid.y - canvas.height / 2;
+    transform.x = mx - (touchLastMid.x - canvas.width/2 - transform.x) * scale;
+    transform.y = my - (touchLastMid.y - canvas.height/2 - transform.y) * scale;
+    transform.scale = Math.max(0.1, Math.min(5, transform.scale * scale));
+    touchStartDist = dist;
+    touchLastMid = { x: mid.x, y: mid.y };
+    requestAnimationFrame(render);
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+  if (dragMode === 'node' && dragNode) {
+    const holdTime = Date.now() - dragStartTime;
+    const touch = e.changedTouches[0];
+    const moveDist = touch ? Math.hypot(touch.clientX - dragStart.x, touch.clientY - dragStart.y) : 999;
+    const clickThreshDist = (dragNode.type === 'domain' || dragNode.type === 'cluster') ? 12 : 5;
+    const clickThreshTime = (dragNode.type === 'domain' || dragNode.type === 'cluster') ? 400 : 200;
+    if (moveDist < clickThreshDist && holdTime < clickThreshTime) {
+      const tappedNode = dragNode;
+      dragNode = null;
+      dragMode = null;
+      stopSim();
+      kickSim(null);
+      selectNode(tappedNode);
+      touchStartDist = null;
+      return;
+    }
+    dragNode = null;
+    stopSim();
+    kickSim(null);
+  }
+  dragMode = null;
+  touchStartDist = null;
+});
+
+// ══════════════════════════════════════════
+//  TOOLTIP
+// ══════════════════════════════════════════
+function showTooltip(e, node) {
+  const ep = node.endpoint;
+  document.getElementById('tt-url').textContent = ep.url;
+
+  const nullNotice = document.getElementById('tt-null');
+  const methodsEl = document.getElementById('tt-methods');
+  methodsEl.innerHTML = '';
+
+  if (isNullEndpoint(ep)) {
+    nullNotice.style.display = 'block';
+    methodsEl.style.display = 'none';
+  } else {
+    nullNotice.style.display = 'none';
+    methodsEl.style.display = 'flex';
+    Object.entries(ep.requests || {}).forEach(([method, d]) => {
+      if (!d || !d.code) return;
+      const c = parseInt(d.code);
+      const cls = statusClass(c);
+      methodsEl.innerHTML += `<span class="method-badge m-${method}" style="display:inline-block;font-size:10px;padding:1px 5px;border-radius:3px">${method} <span class="${cls}">${c}</span></span>`;
+    });
+  }
+
+  const ct = getContentType(ep);
+  document.getElementById('tt-ct').textContent = ct ? `content-type: ${shortCt(ct)}` : '';
+
+  tooltip.style.display = 'block';
+  const tw = 300;
+  let tx = e.clientX + 14, ty = e.clientY + 14;
+  if (tx + tw > window.innerWidth) tx = e.clientX - tw - 14;
+  if (ty + 120 > window.innerHeight) ty = e.clientY - 120;
+  tooltip.style.left = tx + 'px';
+  tooltip.style.top = ty + 'px';
+}
+
+// ══════════════════════════════════════════
+//  PANEL
+// ══════════════════════════════════════════
+// ══════════════════════════════════════════
+//  LOG DETAIL MODAL
+// ══════════════════════════════════════════
+let _logModalNode = null;
+
+function openLogModal(node) {
+  _logModalNode = node;
+  const ep = node.endpoint;
+  const overlay = document.getElementById('log-modal-overlay');
+  overlay.style.display = 'flex';
+
+  document.getElementById('log-modal-url').textContent = ep.url;
+
+  const badges = document.getElementById('log-modal-badges');
+  badges.innerHTML = '';
+  if (ep.is_api)            badges.innerHTML += `<span class="panel-badge badge-api">⚡ API · score ${ep.api_score}</span>`;
+  if (isNullEndpoint(ep))   badges.innerHTML += `<span class="panel-badge badge-null">⚫ Silent</span>`;
+  if (isStaticAsset(ep.url)) badges.innerHTML += `<span class="panel-badge badge-static">📦 Static</span>`;
+
+  const body = document.getElementById('log-modal-body');
+  body.innerHTML = '';
+
+  // NULL NOTICE
+  if (isNullEndpoint(ep)) {
+    const sec = document.createElement('div');
+    sec.innerHTML = `<div class="section-title">Status</div>
+      <div class="null-notice">
+        <span class="null-icon">⚫</span>
+        <div><strong>Silent / No Response Captured</strong>
+        This endpoint returned no HTTP response during probing.</div>
+      </div>`;
+    body.appendChild(sec);
+  }
+
+  // METHODS
+  const methodsData = Object.entries(ep.requests || {}).filter(([, d]) => d && d.code);
+  if (methodsData.length) {
+    const sec = document.createElement('div');
+    sec.innerHTML = `<div class="section-title">Methods & Status</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'method-grid';
+    methodsData.forEach(([method, mdata]) => {
+      const code = parseInt(mdata.code);
+      const sc = statusClass(code);
+      const ct = mdata.content_type || getContentType(ep);
+      const row = document.createElement('div');
+      row.className = 'method-row';
+      row.innerHTML = `
+        <span class="method-badge m-${method}">${method}</span>
+        <span class="status-code ${sc}">${code}</span>
+        <span class="status-msg">${escHtml(mdata.message || '')}</span>
+        ${ct ? `<span class="content-type-tag" title="${escHtml(ct)}">${shortCt(ct)}</span>` : ''}
+        <span class="expand-arrow">›</span>`;
+      const pkt = document.createElement('div');
+      pkt.className = 'packet-panel';
+      pkt.innerHTML = buildPacketView(ep, method, mdata);
+      row.addEventListener('click', () => {
+        const isOpen = pkt.classList.contains('open');
+        grid.querySelectorAll('.packet-panel').forEach(p => p.classList.remove('open'));
+        grid.querySelectorAll('.method-row').forEach(r => r.classList.remove('active'));
+        if (!isOpen) { pkt.classList.add('open'); row.classList.add('active'); }
+      });
+      grid.appendChild(row);
+      grid.appendChild(pkt);
+    });
+    sec.appendChild(grid);
+    body.appendChild(sec);
+  }
+
+  // HEADERS
+  const headers = ep.headers || {};
+  if (Object.keys(headers).length) {
+    const sec2 = document.createElement('div');
+    sec2.innerHTML = `<div class="section-title">Response Headers</div>`;
+    const pre = document.createElement('div');
+    pre.style.cssText = 'background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px 12px;font-size:11px;line-height:1.9;';
+    Object.entries(headers).forEach(([k, v]) => {
+      const line = document.createElement('div');
+      line.className = 'header-line';
+      line.innerHTML = `<span class="header-key">${escHtml(k)}:</span><span class="header-val">${escHtml(String(v))}</span>`;
+      pre.appendChild(line);
+    });
+    sec2.appendChild(pre);
+    body.appendChild(sec2);
+  }
+
+  // REDIRECT
+  if (ep.final_location && ep.final_location !== ep.url) {
+    const sec3 = document.createElement('div');
+    sec3.innerHTML = `<div class="section-title">Redirect</div>
+      <div style="font-size:11px;color:var(--yellow);padding:8px 10px;background:var(--yellow-dim);border-radius:6px;word-break:break-all;line-height:1.6;">
+        → ${escHtml(ep.final_location)}</div>`;
+    body.appendChild(sec3);
+  }
+
+  // GO TO GRAPH button
+  const goBtn = document.createElement('div');
+  goBtn.style.cssText = 'margin-top:4px;padding-bottom:4px;';
+  goBtn.innerHTML = `<button style="
+    background:transparent;border:1px solid var(--border);color:var(--text-dim);
+    font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 14px;border-radius:6px;
+    cursor:pointer;transition:all 0.15s;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;"
+    onmouseover="this.style.borderColor='var(--border-bright)';this.style.color='var(--text)'"
+    onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'"
+    onclick="closeLogModal();switchView('graph');setTimeout(()=>selectNode(_logModalNode),50)">
+    ⬡ Open in Graph View
+  </button>`;
+  body.appendChild(goBtn);
+}
+
+function closeLogModal() {
+  document.getElementById('log-modal-overlay').style.display = 'none';
+  _logModalNode = null;
+}
+
+function copyLogModalUrl() {
+  if (!_logModalNode) return;
+  navigator.clipboard.writeText(_logModalNode.endpoint.url).then(() => {
+    const btn = document.getElementById('log-modal-copy');
+    const orig = btn.textContent;
+    btn.textContent = '✓';
+    btn.style.borderColor = 'var(--green)';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = orig; btn.style.borderColor=''; btn.style.color=''; }, 1500);
+  });
+}
+
+function selectNode(node) {
+  selectedNode = node;
+  requestAnimationFrame(render);
+  openPanel(node);
+}
+
+function openPanel(node, fromDomainNode) {
+  const panel = document.getElementById('panel');
+  panel.classList.add('open');
+
+  // ── CLUSTER NODE ──
+  if (node.type === 'cluster') {
+    // Extract domain from cluster label e.g. "example.com [2/3]"
+    const clusterDomain = node.label.split(' [')[0];
+    const clusterIndex = node.label.match(/\[(\d+)\//)?.[1] || '?';
+    const clusterTotal = node.label.match(/\/(\d+)\]/)?.[1] || '?';
+
+    focusedDomain = null;
+    focusedCluster = node.id;
+    requestAnimationFrame(render);
+
+    document.getElementById('panel-url').textContent = node.label;
+    const badges = document.getElementById('panel-badges');
+    badges.innerHTML = `<span class="panel-badge badge-static">📦 Cluster ${clusterIndex}/${clusterTotal}</span>`;
+
+    const body = document.getElementById('panel-body');
+    body.innerHTML = '';
+
+    // Back button to parent domain
+    const backBtn = document.createElement('button');
+    backBtn.style.cssText = 'width:100%;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:"JetBrains Mono",monospace;font-size:11px;padding:7px 12px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all 0.15s;margin-bottom:4px;';
+    backBtn.innerHTML = '← Back to <span style="color:var(--blue);margin-left:4px">' + escHtml(clusterDomain) + '</span>';
+    backBtn.onmouseenter = () => { backBtn.style.borderColor = 'var(--border-bright)'; backBtn.style.color = 'var(--text)'; };
+    backBtn.onmouseleave = () => { backBtn.style.borderColor = 'var(--border)'; backBtn.style.color = 'var(--text-dim)'; };
+    backBtn.addEventListener('click', () => {
+      const domNode = nodeMap['domain:' + clusterDomain];
+      if (domNode) selectNode(domNode);
+    });
+    body.appendChild(backBtn);
+
+    // Find all endpoint children of this cluster hub
+    const clusterEps = [];
+    edges.forEach(ed => {
+      if (ed.from === node.id) {
+        const child = nodeMap[ed.to];
+        if (child && child.type === 'endpoint') clusterEps.push(child);
+      }
+    });
+
+    const sec = document.createElement('div');
+    sec.innerHTML = '<div class="section-title">Endpoints in this cluster (' + clusterEps.length + ')</div>';
+    const list = document.createElement('div');
+    list.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+
+    clusterEps.forEach(en => {
+      const status = en.status;
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;word-break:break-all;line-height:1.5;transition:border-color 0.12s;';
+      row.onmouseenter = () => row.style.borderColor = 'var(--border-bright)';
+      row.onmouseleave = () => row.style.borderColor = 'var(--border)';
+      const path = en.label || '/';
+      const sc = status ? Math.floor(status/100) : 0;
+      const scColor = sc===2?'var(--green)':sc===3?'var(--yellow)':sc>=4?'var(--red)':'var(--gray)';
+      const isApi = en.endpoint?.is_api;
+      const statusStr = status
+        ? '<span style="color:'+scColor+';font-weight:700;float:right;margin-left:6px">' + status + '</span>'
+        : '<span style="color:var(--gray);font-weight:700;float:right;margin-left:6px">—</span>';
+      const apiTag = isApi ? '<span style="color:var(--purple);font-size:9px;float:right;margin-left:4px;margin-top:1px">⚡API</span>' : '';
+      row.innerHTML = statusStr + apiTag + '<span style="color:var(--blue)">' + escHtml(path) + '</span>';
+      row.addEventListener('click', () => openPanel(en, node));
+      list.appendChild(row);
+    });
+
+    if (clusterEps.length === 0) {
+      const empty = document.createElement('div');
+      empty.style.cssText = 'color:var(--text-dim);font-size:11px;padding:12px;text-align:center;';
+      empty.textContent = 'No endpoints in this cluster.';
+      list.appendChild(empty);
+    }
+    sec.appendChild(list);
+    body.appendChild(sec);
+    return;
+  }
+
+  // ── DOMAIN NODE ──
+  if (node.type === 'domain') {
+    const fqdn = node.label;
+    focusedDomain = fqdn;
+    focusedCluster = null;
+    requestAnimationFrame(render);
+    document.getElementById('panel-url').textContent = 'https://' + fqdn;
+    const badges = document.getElementById('panel-badges');
+    badges.innerHTML = '<span class="panel-badge badge-static">🌐 Domain root</span>';
+    const body = document.getElementById('panel-body');
+    body.innerHTML = '';
+
+    // All endpoints for this domain
+    const allDomainEps = nodes.filter(n => n.type === 'endpoint' && getDomain(n.id) === fqdn);
+    // All cluster hubs for this domain
+    const clusterHubs = nodes.filter(n => n.type === 'cluster' && n.label.startsWith(fqdn + ' ['));
+    let domainPanelFilter = 'all';
+
+    function renderDomainList() {
+      let eps = allDomainEps;
+      if (domainPanelFilter === 'api')    eps = eps.filter(n => n.endpoint?.is_api);
+      if (domainPanelFilter === '2xx')    eps = eps.filter(n => n.status >= 200 && n.status < 300);
+      if (domainPanelFilter === '3xx')    eps = eps.filter(n => n.status >= 300 && n.status < 400);
+      if (domainPanelFilter === '4xx')    eps = eps.filter(n => n.status >= 400 && n.status < 500);
+      if (domainPanelFilter === 'static') eps = eps.filter(n => isStaticAsset(n.id));
+      if (domainPanelFilter === 'null')   eps = eps.filter(n => isNullEndpoint(n.endpoint));
+
+      body.innerHTML = '';
+
+      // Sub-cluster list (only shown when multiple clusters exist)
+      if (clusterHubs.length > 0) {
+        const clusterSec = document.createElement('div');
+        clusterSec.innerHTML = '<div class="section-title">Sub-clusters (' + clusterHubs.length + ')</div>';
+        const clusterList = document.createElement('div');
+        clusterList.style.cssText = 'display:flex;flex-direction:column;gap:4px;margin-bottom:4px;';
+        clusterHubs.forEach(hub => {
+          // Count endpoints in this cluster
+          const hubEps = [];
+          edges.forEach(ed => {
+            if (ed.from === hub.id) {
+              const child = nodeMap[ed.to];
+              if (child && child.type === 'endpoint') hubEps.push(child);
+            }
+          });
+          const clusterIdx = hub.label.match(/\[(\d+)\//)?.[1] || '?';
+          const clusterTot = hub.label.match(/\/(\d+)\]/)?.[1] || '?';
+          const apiCt = hubEps.filter(n => n.endpoint?.is_api).length;
+          const errCt = hubEps.filter(n => n.status >= 400).length;
+
+          const row = document.createElement('div');
+          row.style.cssText = 'padding:7px 10px;background:var(--surface2);border:1px solid #0ea5e940;border-radius:6px;cursor:pointer;font-size:11px;display:flex;align-items:center;gap:8px;transition:border-color 0.12s;';
+          row.onmouseenter = () => row.style.borderColor = '#0ea5e9';
+          row.onmouseleave = () => row.style.borderColor = '#0ea5e940';
+          row.innerHTML =
+            '<span style="color:#0ea5e9;font-weight:700;font-size:13px">📦</span>' +
+            '<span style="color:var(--text-bright);font-weight:600">Cluster ' + clusterIdx + ' / ' + clusterTot + '</span>' +
+            '<span style="color:var(--text-dim);font-size:10px">' + hubEps.length + ' endpoints</span>' +
+            (apiCt ? '<span style="color:var(--purple);font-size:9px;margin-left:auto">⚡' + apiCt + ' API</span>' : '') +
+            (errCt ? '<span style="color:var(--red);font-size:9px' + (apiCt?';margin-left:4px':';margin-left:auto') + '">⚠ ' + errCt + ' err</span>' : '');
+          row.addEventListener('click', () => selectNode(hub));
+          clusterList.appendChild(row);
+        });
+        clusterSec.appendChild(clusterList);
+        body.appendChild(clusterSec);
+      }
+
+      // Filter pills
+      const pillBar = document.createElement('div');
+      pillBar.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;';
+      const filters = [
+        { key:'all', label:'All' },
+        { key:'api', label:'API' },
+        { key:'2xx', label:'2xx' },
+        { key:'3xx', label:'3xx' },
+        { key:'4xx', label:'4xx' },
+        { key:'static', label:'Static' },
+        { key:'null', label:'Silent' },
+      ];
+      filters.forEach(f => {
+        const pill = document.createElement('div');
+        pill.textContent = f.label;
+        pill.style.cssText = 'padding:3px 10px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid ' +
+          (domainPanelFilter === f.key ? 'var(--border-bright)' : 'var(--border)') +
+          ';background:' + (domainPanelFilter === f.key ? 'var(--surface2)' : 'transparent') +
+          ';color:' + (domainPanelFilter === f.key ? 'var(--text-bright)' : 'var(--text-dim)') +
+          ';transition:all 0.12s;';
+        pill.addEventListener('click', () => { domainPanelFilter = f.key; renderDomainList(); });
+        pillBar.appendChild(pill);
+      });
+      body.appendChild(pillBar);
+
+      // Endpoint list
+      const sec = document.createElement('div');
+      sec.innerHTML = '<div class="section-title">Endpoints (' + eps.length + ' / ' + allDomainEps.length + ')</div>';
+      const list = document.createElement('div');
+      list.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+      eps.forEach(en => {
+        const status = en.status;
+        const row = document.createElement('div');
+        row.style.cssText = 'padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;word-break:break-all;line-height:1.5;transition:border-color 0.12s;';
+        row.onmouseenter = () => row.style.borderColor = 'var(--border-bright)';
+        row.onmouseleave = () => row.style.borderColor = 'var(--border)';
+        const path = en.label || '/';
+        const sc = status ? Math.floor(status/100) : 0;
+        const scColor = sc===2?'var(--green)':sc===3?'var(--yellow)':sc>=4?'var(--red)':'var(--gray)';
+        const isApi = en.endpoint?.is_api;
+        const statusStr = status
+          ? '<span style="color:'+scColor+';font-weight:700;float:right;margin-left:6px">' + status + '</span>'
+          : '<span style="color:var(--gray);font-weight:700;float:right;margin-left:6px">—</span>';
+        const apiTag = isApi ? '<span style="color:var(--purple);font-size:9px;float:right;margin-left:4px;margin-top:1px">⚡API</span>' : '';
+        row.innerHTML = statusStr + apiTag + '<span style="color:var(--blue)">' + escHtml(path) + '</span>';
+        row.addEventListener('click', () => {
+          // open endpoint panel with a back button to return to this domain
+          openPanel(en, node);
+        });
+        list.appendChild(row);
+      });
+      if (eps.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:var(--text-dim);font-size:11px;padding:12px;text-align:center;';
+        empty.textContent = 'No endpoints match this filter.';
+        list.appendChild(empty);
+      }
+      sec.appendChild(list);
+      body.appendChild(sec);
+    }
+
+    renderDomainList();
+    return;
+  }
+
+  focusedDomain = null;
+  focusedCluster = null;
+  const ep = node.endpoint;
+  document.getElementById('panel-url').textContent = ep.url;
+
+  const badges = document.getElementById('panel-badges');
+  badges.innerHTML = '';
+  if (ep.is_api) {
+    badges.innerHTML += `<span class="panel-badge badge-api">⚡ API · score ${ep.api_score}</span>`;
+  }
+  if (isNullEndpoint(ep)) {
+    badges.innerHTML += `<span class="panel-badge badge-null">⚫ Silent (no response)</span>`;
+  }
+  if (isStaticAsset(ep.url)) {
+    badges.innerHTML += `<span class="panel-badge badge-static">📦 Static asset</span>`;
+  }
+
+  const body = document.getElementById('panel-body');
+  body.innerHTML = '';
+
+  // ── BACK BUTTON (when drilled in from a domain node) ──
+  if (fromDomainNode) {
+    const backBtn = document.createElement('button');
+    backBtn.style.cssText = `
+      display:flex;align-items:center;gap:6px;background:transparent;
+      border:1px solid var(--border);color:var(--text-dim);
+      font-family:'JetBrains Mono',monospace;font-size:11px;
+      padding:5px 12px;border-radius:6px;cursor:pointer;transition:all 0.15s;
+      margin-bottom:4px;width:100%;`;
+    backBtn.innerHTML = '‹ Back to ' + escHtml(fromDomainNode.label);
+    backBtn.onmouseover = () => { backBtn.style.borderColor='var(--border-bright)'; backBtn.style.color='var(--text)'; };
+    backBtn.onmouseout  = () => { backBtn.style.borderColor='var(--border)'; backBtn.style.color='var(--text-dim)'; };
+    backBtn.addEventListener('click', () => openPanel(fromDomainNode));
+    body.appendChild(backBtn);
+  }
+
+  // ── NULL NOTICE ──
+  if (isNullEndpoint(ep)) {
+    const sec = document.createElement('div');
+    sec.innerHTML = `
+      <div class="section-title">Status</div>
+      <div class="null-notice">
+        <span class="null-icon">⚫</span>
+        <div>
+          <strong>Silent / No Response Captured</strong>
+          This endpoint returned no HTTP response during probing — it may have dropped the connection, timed out silently, or filtered requests. It is listed for visibility but may not be reachable.
+        </div>
+      </div>`;
+    body.appendChild(sec);
+  }
+
+  // ── METHODS SECTION ──
+  const methodsData = Object.entries(ep.requests || {}).filter(([, d]) => d && d.code);
+  if (methodsData.length) {
+    const sec = document.createElement('div');
+    sec.innerHTML = `<div class="section-title">Methods & Status</div>`;
+    const grid = document.createElement('div');
+    grid.className = 'method-grid';
+
+    methodsData.forEach(([method, mdata]) => {
+      const code = parseInt(mdata.code);
+      const sc = statusClass(code);
+      const ct = mdata.content_type || getContentType(ep);
+
+      const row = document.createElement('div');
+      row.className = 'method-row';
+      row.innerHTML = `
+        <span class="method-badge m-${method}">${method}</span>
+        <span class="status-code ${sc}">${code}</span>
+        <span class="status-msg">${escHtml(mdata.message || '')}</span>
+        ${ct ? `<span class="content-type-tag" title="${escHtml(ct)}">${shortCt(ct)}</span>` : ''}
+        <span class="expand-arrow">›</span>
+      `;
+
+      const pkt = document.createElement('div');
+      pkt.className = 'packet-panel';
+      pkt.innerHTML = buildPacketView(ep, method, mdata);
+
+      row.addEventListener('click', () => {
+        const isOpen = pkt.classList.contains('open');
+        document.querySelectorAll('.packet-panel').forEach(p => p.classList.remove('open'));
+        document.querySelectorAll('.method-row').forEach(r => r.classList.remove('active'));
+        if (!isOpen) { pkt.classList.add('open'); row.classList.add('active'); }
+        requestAnimationFrame(render);
+      });
+
+      grid.appendChild(row);
+      grid.appendChild(pkt);
+    });
+
+    sec.appendChild(grid);
+    body.appendChild(sec);
+  }
+
+  // ── RESPONSE HEADERS ──
+  const headers = ep.headers || {};
+  if (Object.keys(headers).length) {
+    const sec2 = document.createElement('div');
+    sec2.innerHTML = `<div class="section-title">Response Headers</div>`;
+    const pre = document.createElement('div');
+    pre.style.cssText = 'background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:10px 12px;font-size:11px;line-height:1.9;';
+    Object.entries(headers).forEach(([k, v]) => {
+      const line = document.createElement('div');
+      line.className = 'header-line';
+      line.innerHTML = `<span class="header-key">${escHtml(k)}:</span><span class="header-val">${escHtml(String(v))}</span>`;
+      pre.appendChild(line);
+    });
+    sec2.appendChild(pre);
+    body.appendChild(sec2);
+  }
+
+  // ── REDIRECT ──
+  if (ep.final_location && ep.final_location !== ep.url) {
+    const sec3 = document.createElement('div');
+    sec3.innerHTML = `
+      <div class="section-title">Redirect</div>
+      <div style="font-size:11px;color:var(--yellow);padding:8px 10px;background:var(--yellow-dim);border-radius:6px;word-break:break-all;line-height:1.6;">
+        → ${escHtml(ep.final_location)}
+      </div>`;
+    body.appendChild(sec3);
+  }
+}
+
+function buildPacketView(ep, method, mdata) {
+  const headers = ep.headers || {};
+  const reqHeaders = buildRequestHeaders(ep.url, method);
+  const resHeaderLines = Object.entries(headers).map(([k, v]) =>
+    `<div class="header-line"><span class="header-key">${escHtml(k)}:</span><span class="header-val">${escHtml(String(v))}</span></div>`
+  ).join('');
+  const uid = sanitizeId(ep.url + method);
+
+  return `
+    <div class="packet-tab-bar">
+      <div class="packet-tab active" onclick="switchTab(this,'req-${uid}')">Request</div>
+      <div class="packet-tab" onclick="switchTab(this,'res-${uid}')">Response</div>
+    </div>
+    <div class="packet-content active" id="req-${uid}">
+      <div style="color:var(--blue);margin-bottom:6px;font-weight:600">${method} ${getPath(ep.url)} HTTP/1.1</div>
+      ${reqHeaders}
+    </div>
+    <div class="packet-content" id="res-${uid}">
+      <div style="color:${statusColor(mdata.code)};margin-bottom:6px;font-weight:600">HTTP/1.1 ${parseInt(mdata.code)} ${escHtml(mdata.message || '')}</div>
+      ${resHeaderLines || '<span style="color:var(--text-dim)">No headers captured</span>'}
+    </div>
+  `;
+}
+
+function sanitizeId(s) { return btoa(s).replace(/[^a-zA-Z0-9]/g, '').slice(0, 40); }
+
+function buildRequestHeaders(url, method) {
+  try {
+    const u = new URL(url);
+    const lines = [
+      ['Host', u.hostname],
+      ['User-Agent', 'meowpi/1.0'],
+      ['Accept', method === 'POST' ? 'application/json' : '*/*'],
+      ['Connection', 'keep-alive'],
+    ];
+    if (['POST','PUT','PATCH'].includes(method)) {
+      lines.push(['Content-Type', 'application/json']);
+      lines.push(['Content-Length', '0']);
+    }
+    return lines.map(([k, v]) =>
+      `<div class="header-line"><span class="header-key">${escHtml(k)}:</span><span class="header-val">${escHtml(v)}</span></div>`
+    ).join('');
+  } catch { return ''; }
+}
+
+function getPath(url) {
+  try { const u = new URL(url); return u.pathname + u.search || '/'; } catch { return url; }
+}
+
+function switchTab(el, targetId) {
+  const pkt = el.closest('.packet-panel');
+  el.closest('.packet-tab-bar').querySelectorAll('.packet-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  pkt.querySelectorAll('.packet-content').forEach(c => {
+    c.classList.toggle('active', c.id === targetId);
+  });
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.remove('open');
+  selectedNode = null;
+  focusedDomain = null;
+  focusedCluster = null;
+  requestAnimationFrame(render);
+}
+
+// ══════════════════════════════════════════
+//  VIEW CONTROLS
+// ══════════════════════════════════════════
+function zoom(delta) {
+  transform.scale = Math.max(0.1, Math.min(5, transform.scale + delta));
+  requestAnimationFrame(render);
+}
+
+function resetView() {
+  if (!nodes.length) {
+    transform = { x: 0, y: 0, scale: 1 };
+    requestAnimationFrame(render);
+    return;
+  }
+  // Compute bounding box of all nodes
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  nodes.forEach(n => {
+    minX = Math.min(minX, n.x - n.radius);
+    maxX = Math.max(maxX, n.x + n.radius);
+    minY = Math.min(minY, n.y - n.radius);
+    maxY = Math.max(maxY, n.y + n.radius);
+  });
+  const pad = 60;
+  const bw = maxX - minX + pad * 2;
+  const bh = maxY - minY + pad * 2;
+  const scaleX = canvas.width  / bw;
+  const scaleY = canvas.height / bh;
+  const scale  = Math.min(scaleX, scaleY, 1.5); // don't zoom in past 1.5x
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  transform = {
+    x: -cx * scale,
+    y: -cy * scale,
+    scale
+  };
+  requestAnimationFrame(render);
+}
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// initial render
+render();
+
+// ══════════════════════════════════════════
+//  COPY URL
+// ══════════════════════════════════════════
+function copyPanelUrl() {
+  const url = document.getElementById('panel-url').textContent;
+  navigator.clipboard.writeText(url).catch(() => {});
+  const btn = document.getElementById('panel-copy-btn');
+  btn.textContent = '✓';
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = '⎘'; btn.classList.remove('copied'); }, 1400);
+}
+
+// ══════════════════════════════════════════
+//  VIEW SWITCHING
+// ══════════════════════════════════════════
+let currentView = 'graph';
+
+function switchView(view) {
+  currentView = view;
+  const graphEl = document.getElementById('main');
+  const logEl   = document.getElementById('log-view');
+  const treeEl  = document.getElementById('tree-view');
+  const btnG    = document.getElementById('btn-graph');
+  const btnL    = document.getElementById('btn-log');
+  const btnT    = document.getElementById('btn-tree');
+
+  graphEl.style.display = 'none';
+  logEl.style.display   = 'none';
+  treeEl.style.display  = 'none';
+  btnG.classList.remove('active');
+  btnL.classList.remove('active');
+  btnT.classList.remove('active');
+
+  if (view === 'graph') {
+    graphEl.style.display = 'flex';
+    btnG.classList.add('active');
+  } else if (view === 'tree') {
+    treeEl.style.display = 'flex';  // CSS class handles flex-direction, overflow etc.
+    btnT.classList.add('active');
+    renderTree();
+  } else {
+    logEl.style.display = 'flex';
+    btnL.classList.add('active');
+    renderLog();
+  }
+}
+
+// ══════════════════════════════════════════
+//  TREE STATE & RENDER
+// ══════════════════════════════════════════
+let treeFilter = 'all';
+let treeCollapsed = {};
+let treeSortByCount = false;
+
+function toggleTreeSort(el) {
+  treeSortByCount = !treeSortByCount;
+  el.textContent = treeSortByCount ? '⇅ Most' : '⇅ A–Z';
+  el.classList.toggle('active', treeSortByCount);
+  renderTree();
+}
+
+function setTreeFilter(f, el) {
+  treeFilter = f;
+  document.querySelectorAll('[data-tf]').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderTree();
+}
+
+function treePassesFilter(ep, node) {
+  if (!ep) return false;
+  if (treeFilter === 'api')    return ep.is_api;
+  if (treeFilter === 'static') return isStaticAsset(ep.url);
+  if (treeFilter === 'null')   return isNullEndpoint(ep);
+  const s = node.status;
+  if (treeFilter === '2xx') return s >= 200 && s < 300;
+  if (treeFilter === '3xx') return s >= 300 && s < 400;
+  if (treeFilter === '4xx') return s >= 400 && s < 500;
+  if (treeFilter === '5xx') return s >= 500;
+  return true;
+}
+
+function renderTree() {
+  if (!data) return;
+  const body   = document.getElementById('tree-body');
+  const search = (document.getElementById('tree-search')?.value || '').toLowerCase();
+  const eps    = nodes.filter(n => n.type === 'endpoint');
+
+  // Group by domain
+  const groups = {};
+  let totalShown = 0;
+
+  eps.forEach(node => {
+    const ep = node.endpoint;
+    if (!ep) return;
+    if (!treePassesFilter(ep, node)) return;
+    const searchable = (ep.url + ' ' +
+      Object.entries(ep.requests || {}).map(([m,d]) => m+' '+(d?.code||'')).join(' ')).toLowerCase();
+    if (search && !searchable.includes(search)) return;
+    const domain = getDomain(ep.url);
+    if (!groups[domain]) groups[domain] = [];
+    groups[domain].push(node);
+    totalShown++;
+  });
+
+  document.getElementById('tree-count').textContent =
+    totalShown + ' endpoint' + (totalShown !== 1 ? 's' : '') +
+    ' · ' + Object.keys(groups).length + ' domain' + (Object.keys(groups).length !== 1 ? 's' : '');
+
+  body.innerHTML = '';
+
+  if (totalShown === 0) {
+    body.innerHTML = '<div id="tree-empty"><div style="font-size:32px;opacity:0.3">⊞</div><div style="font-size:12px">No endpoints match.</div></div>';
+    return;
+  }
+
+  const sortedDomains = Object.keys(groups).sort(treeSortByCount
+    ? (a, b) => groups[b].length - groups[a].length
+    : (a, b) => a < b ? -1 : a > b ? 1 : 0);
+
+  sortedDomains.forEach(domain => {
+    let rows = [...groups[domain]].sort((a, b) => {
+      const la = a.label || '/';
+      const lb = b.label || '/';
+      return la < lb ? -1 : la > lb ? 1 : 0;
+    });
+
+    const isCollapsed = treeCollapsed[domain] || false;
+
+    // Domain row (full-width card)
+    const domainRow = document.createElement('div');
+    domainRow.className = 'tree-domain-row' + (isCollapsed ? ' is-collapsed' : '');
+
+    // Header — clickable to collapse
+    const header = document.createElement('div');
+    header.className = 'tree-domain-header';
+    const apiCount = rows.filter(n => n.endpoint?.is_api).length;
+    const errCount = rows.filter(n => n.status >= 400).length;
+    header.innerHTML =
+      '<span class="tree-domain-icon">🌐</span>' +
+      '<span class="tree-domain-name">' + escHtml(domain) + '</span>' +
+      (apiCount ? '<span style="font-size:9px;color:var(--purple);margin-right:2px">⚡' + apiCount + '</span>' : '') +
+      (errCount ? '<span style="font-size:9px;color:var(--red);margin-right:2px">⚠' + errCount + '</span>' : '') +
+      '<span class="tree-domain-count">' + rows.length + '</span>' +
+      '<span class="tree-domain-chevron' + (isCollapsed ? ' collapsed' : '') + '">▾</span>';
+
+    header.addEventListener('click', () => {
+      treeCollapsed[domain] = !treeCollapsed[domain];
+      wrap.classList.toggle('tree-collapsed', treeCollapsed[domain]);
+      header.querySelector('.tree-domain-chevron').classList.toggle('collapsed', treeCollapsed[domain]);
+      domainRow.classList.toggle('is-collapsed', treeCollapsed[domain]);
+    });
+    domainRow.appendChild(header);
+
+    // Endpoint grid (auto-fill columns, collapsible)
+    const wrap = document.createElement('div');
+    wrap.className = 'tree-endpoints-wrap' + (isCollapsed ? ' tree-collapsed' : '');
+
+    if (rows.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'tree-ep-row-empty';
+      empty.textContent = 'No endpoints match.';
+      wrap.appendChild(empty);
+    }
+
+    rows.forEach(node => {
+      const ep     = node.endpoint;
+      const path   = node.label || '/';
+      const isNull = isNullEndpoint(ep);
+      const reqs   = Object.entries(ep.requests || {}).filter(([,d]) => d && d.code);
+      const s      = node.status;
+      const sc     = s ? Math.floor(s / 100) : 0;
+
+      const row = document.createElement('div');
+      row.className = 'tree-ep-row';
+      row.title = ep.url;
+      row.addEventListener('click', () => openLogModal(node));
+
+      // left indicator bar
+      const ind = document.createElement('div');
+      ind.className = 'tree-ep-indicator' +
+        (isNull ? ' snull' : sc === 2 ? ' s2' : sc === 3 ? ' s3' : sc === 4 ? ' s4' : sc === 5 ? ' s5' : '');
+      row.appendChild(ind);
+
+      // main content
+      const main = document.createElement('div');
+      main.className = 'tree-ep-main';
+
+      const pathEl = document.createElement('div');
+      pathEl.className = 'tree-ep-path';
+      pathEl.textContent = path;
+      main.appendChild(pathEl);
+
+      const meta = document.createElement('div');
+      meta.className = 'tree-ep-meta';
+
+      if (isNull) {
+        meta.innerHTML += '<span class="tree-tag tree-tag-null">⚫ silent</span>';
+      } else {
+        reqs.forEach(([m, d]) => {
+          const code = d?.code ? parseInt(d.code) : null;
+          const csc  = code ? Math.floor(code/100) : 0;
+          const statusClass = csc===2?'':'s'+csc;
+          meta.innerHTML +=
+            `<span class="tree-tag tree-tag-method m-${m}">${m}</span>` +
+            (code ? `<span class="tree-tag tree-tag-status ${statusClass}">${code}</span>` : '');
+        });
+      }
+
+      if (ep.is_api)             meta.innerHTML += '<span class="tree-tag tree-tag-api">⚡API</span>';
+      if (isStaticAsset(ep.url)) meta.innerHTML += '<span class="tree-tag tree-tag-static">📦</span>';
+      if (ep.final_location && ep.final_location !== ep.url)
+        meta.innerHTML += '<span class="tree-tag tree-tag-static" style="color:var(--yellow)">↪ redir</span>';
+
+      main.appendChild(meta);
+      row.appendChild(main);
+      wrap.appendChild(row);
+    });
+
+    domainRow.appendChild(wrap);
+    body.appendChild(domainRow);
+  });
+}
+
+// ══════════════════════════════════════════
+//  LOG STATE
+// ══════════════════════════════════════════
+let logFilter  = 'all';
+let logSort    = { col: 'url', dir: 'asc' };
+let logCollapsed = {}; // domain → bool
+
+function setLogFilter(f, el) {
+  logFilter = f;
+  document.querySelectorAll('.log-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderLog();
+}
+
+// ══════════════════════════════════════════
+//  LOG RENDER
+// ══════════════════════════════════════════
+function logPassesFilter(ep, node) {
+  if (!ep) return false;
+  if (logFilter === 'api')    return ep.is_api;
+  if (logFilter === 'static') return isStaticAsset(ep.url);
+  if (logFilter === 'null')   return isNullEndpoint(ep);
+  const s = node.status;
+  if (logFilter === '2xx') return s >= 200 && s < 300;
+  if (logFilter === '3xx') return s >= 300 && s < 400;
+  if (logFilter === '4xx') return s >= 400 && s < 500;
+  if (logFilter === '5xx') return s >= 500;
+  return true;
+}
+
+function renderLog() {
+  if (!data) return;
+  const body    = document.getElementById('log-body');
+  const search  = (document.getElementById('log-search')?.value || '').toLowerCase();
+  const eps     = nodes.filter(n => n.type === 'endpoint');
+
+  // group by domain
+  const groups = {};
+  let totalShown = 0;
+
+  eps.forEach(node => {
+    const ep = node.endpoint;
+    if (!ep) return;
+    if (!logPassesFilter(ep, node)) return;
+    // search filter
+    const searchable = (ep.url + ' ' +
+      Object.entries(ep.requests || {}).map(([m,d]) => m+' '+(d?.code||'')+' '+(d?.content_type||'')).join(' ') +
+      (ep.headers?.['Content-Type'] || '')).toLowerCase();
+    if (search && !searchable.includes(search)) return;
+    const domain = getDomain(ep.url);
+    if (!groups[domain]) groups[domain] = [];
+    groups[domain].push(node);
+    totalShown++;
+  });
+
+  document.getElementById('log-count').textContent =
+    totalShown + ' endpoint' + (totalShown !== 1 ? 's' : '') +
+    ' across ' + Object.keys(groups).length + ' domain' + (Object.keys(groups).length !== 1 ? 's' : '');
+
+  body.innerHTML = '';
+
+  if (totalShown === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'log-empty';
+    empty.textContent = 'No endpoints match your filter.';
+    body.appendChild(empty);
+    return;
+  }
+
+  // sort domains alphabetically
+  const sortedDomains = Object.keys(groups).sort();
+
+  sortedDomains.forEach(domain => {
+    let rows = groups[domain];
+
+    // sort rows within domain
+    rows = [...rows].sort((a, b) => {
+      let av, bv;
+      if (logSort.col === 'url')    { av = a.endpoint.url;    bv = b.endpoint.url; }
+      else if (logSort.col === 'status') { av = a.status || 0;    bv = b.status || 0; }
+      else if (logSort.col === 'ct')     {
+        av = getContentType(a.endpoint);
+        bv = getContentType(b.endpoint);
+      }
+      else { av = a.endpoint.url; bv = b.endpoint.url; }
+      if (av < bv) return logSort.dir === 'asc' ? -1 : 1;
+      if (av > bv) return logSort.dir === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    const collapsed = logCollapsed[domain];
+
+    // domain header
+    const header = document.createElement('div');
+    header.className = 'log-domain-header';
+    const apiCount    = rows.filter(n => n.endpoint.is_api).length;
+    const errorCount  = rows.filter(n => n.status >= 400).length;
+    const nullCount   = rows.filter(n => isNullEndpoint(n.endpoint)).length;
+    header.innerHTML =
+      '<span class="log-domain-badge">🌐 ' + escHtml(domain) + '</span>' +
+      '<span class="log-domain-count">' + rows.length + ' endpoints</span>' +
+      (apiCount   ? '<span class="log-tag-api">⚡ ' + apiCount + ' API</span>' : '') +
+      (errorCount ? '<span style="font-size:10px;color:var(--red)">⚠ ' + errorCount + ' errors</span>' : '') +
+      (nullCount  ? '<span style="font-size:10px;color:var(--gray)">⚫ ' + nullCount + ' silent</span>' : '') +
+      '<span class="log-domain-chevron' + (collapsed ? ' collapsed' : '') + '">▾</span>';
+    header.addEventListener('click', () => {
+      logCollapsed[domain] = !logCollapsed[domain];
+      renderLog();
+    });
+    body.appendChild(header);
+
+    if (collapsed) return;
+
+    // ── one compact table per domain, ONE ROW per endpoint ──
+    const table = document.createElement('table');
+    table.className = 'log-table';
+    table.style.tableLayout = 'fixed';
+    table.style.width = '100%';
+
+    // colgroup for controlled widths
+    table.innerHTML = `<colgroup>
+      <col style="width:38%">
+      <col style="width:28%">
+      <col style="width:7%">
+      <col style="width:9%">
+      <col style="width:18%">
+    </colgroup>`;
+
+    // thead (one per domain, not sticky — avoids z-index/scroll container bugs)
+    const cols = [
+      { key: 'url',    label: 'Path' },
+      { key: 'method', label: 'Methods' },
+      { key: 'status', label: 'Status' },
+      { key: 'ct',     label: 'Type' },
+      { key: 'tags',   label: 'Tags' },
+    ];
+    const thead = document.createElement('thead');
+    const thr   = document.createElement('tr');
+    cols.forEach(c => {
+      const th = document.createElement('th');
+      th.textContent = c.label;
+      if (c.key !== 'method' && c.key !== 'tags') {
+        if (logSort.col === c.key) th.classList.add('sorted-' + logSort.dir);
+        th.addEventListener('click', () => {
+          if (logSort.col === c.key) { logSort.dir = logSort.dir === 'asc' ? 'desc' : 'asc'; }
+          else { logSort.col = c.key; logSort.dir = 'asc'; }
+          renderLog();
+        });
+      }
+      thr.appendChild(th);
+    });
+    thead.appendChild(thr);
+    table.appendChild(thead);
+
+    // tbody — one <tr> per endpoint
+    const tbody = document.createElement('tbody');
+    rows.forEach(node => {
+      const ep     = node.endpoint;
+      const path   = node.label || '/';
+      const isNull = isNullEndpoint(ep);
+      const ct     = getContentType(ep);
+      const reqs   = Object.entries(ep.requests || {}).filter(([,d]) => d && d.code);
+
+      const tr = document.createElement('tr');
+      tr.className = 'log-row';
+      tr.addEventListener('click', () => openLogModal(node));
+
+      // ── path cell ──
+      const pathTd = document.createElement('td');
+      pathTd.className = 'log-path-cell';
+      pathTd.title = ep.url;
+      pathTd.textContent = path;
+      tr.appendChild(pathTd);
+
+      // ── methods cell: all method+status badges in one cell ──
+      const methodTd = document.createElement('td');
+      methodTd.style.lineHeight = '1.6';
+      if (isNull) {
+        methodTd.innerHTML = '<span style="color:var(--gray);font-size:10px">no response</span>';
+      } else if (reqs.length) {
+        reqs.forEach(([m, d]) => {
+          const code = d?.code ? parseInt(d.code) : null;
+          const scolor = code ? (code<300?'var(--green)':code<400?'var(--yellow)':code<500?'var(--red)':'var(--orange)') : 'var(--text-dim)';
+          const tag = document.createElement('span');
+          tag.className = 'log-method-tag m-' + m;
+          tag.style.cssText = 'margin-right:3px;display:inline-flex;align-items:center;gap:3px;';
+          tag.innerHTML = '<span>' + m + '</span>' +
+            (code ? '<span style="color:'+scolor+';font-weight:700;font-size:10px">'+code+'</span>' : '');
+          methodTd.appendChild(tag);
+        });
+      } else {
+        methodTd.innerHTML = '<span style="color:var(--text-dim);font-size:10px">—</span>';
+      }
+      tr.appendChild(methodTd);
+
+      // ── best status cell ──
+      const statusTd = document.createElement('td');
+      if (isNull) {
+        statusTd.innerHTML = '<span class="log-tag-null">—</span>';
+      } else {
+        const s = node.status;
+        const sc = s ? Math.floor(s/100) : 0;
+        const scColor = sc===2?'var(--green)':sc===3?'var(--yellow)':sc>=4?'var(--red)':'var(--gray)';
+        statusTd.innerHTML = s
+          ? '<span class="log-status" style="color:'+scColor+'">'+s+'</span>'
+          : '<span class="log-tag-null">—</span>';
+      }
+      tr.appendChild(statusTd);
+
+      // ── content-type cell ──
+      const ctTd = document.createElement('td');
+      if (ct) ctTd.innerHTML = '<span class="log-ct-tag">'+escHtml(shortCt(ct))+'</span>';
+      tr.appendChild(ctTd);
+
+      // ── tags cell ──
+      const tagTd = document.createElement('td');
+      tagTd.style.lineHeight = '1.8';
+      if (isNull)                tagTd.innerHTML += '<span class="log-tag-null">⚫ silent</span> ';
+      if (ep.is_api)             tagTd.innerHTML += '<span class="log-tag-api">⚡ API</span> ';
+      if (isStaticAsset(ep.url)) tagTd.innerHTML += '<span class="log-ct-tag">📦 static</span> ';
+      if (ep.final_location && ep.final_location !== ep.url)
+        tagTd.innerHTML += '<span class="log-ct-tag" style="color:var(--yellow)">↪ redir</span>';
+      tr.appendChild(tagTd);
+
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    body.appendChild(table);
+  });
+}
+
+// ══════════════════════════════════════════
+//  CSV EXPORT
+// ══════════════════════════════════════════
+function exportLogCsv() {
+  if (!data) return;
+  const rows = [['Domain','URL','Path','Method','Status','Status Message','Content-Type','Is API','Is Static','Is Silent','Redirect']];
+  nodes.filter(n => n.type === 'endpoint').forEach(node => {
+    const ep = node.endpoint;
+    if (!ep) return;
+    const domain = getDomain(ep.url);
+    const path = node.label || '/';
+    const ct = getContentType(ep);
+    const isNull = isNullEndpoint(ep);
+    const reqs = Object.entries(ep.requests || {}).filter(([,d]) => d && d.code);
+    if (isNull) {
+      rows.push([domain, ep.url, path, '', '', '', ct, ep.is_api?'yes':'no',
+        isStaticAsset(ep.url)?'yes':'no', 'yes',
+        ep.final_location !== ep.url ? ep.final_location : '']);
+    } else {
+      reqs.forEach(([method, mdata]) => {
+        rows.push([domain, ep.url, path, method, mdata.code||'', mdata.message||'',
+          mdata.content_type || ct, ep.is_api?'yes':'no',
+          isStaticAsset(ep.url)?'yes':'no', 'no',
+          ep.final_location && ep.final_location !== ep.url ? ep.final_location : '']);
+      });
+    }
+  });
+  const csv = rows.map(r => r.map(c => '"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'urlmapper_export.csv';
+  a.click();
+}
+
+</script>
+</body>
+</html>
