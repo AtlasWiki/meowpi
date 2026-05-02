@@ -904,6 +904,7 @@
     <button class="view-btn active" id="btn-graph" onclick="switchView('graph')">⬡ Graph</button>
     <button class="view-btn" id="btn-tree" onclick="switchView('tree')">⊞ Tree</button>
     <button class="view-btn" id="btn-log" onclick="switchView('log')">≡ Log</button>
+    <button class="view-btn" id="btn-mindmap" onclick="switchView('mindmap')">⬛ Mindmap</button>
   </div>
   <div class="topbar-sep"></div>
   <input type="file" id="file-input" accept=".json" style="display:none">
@@ -1251,7 +1252,141 @@
   gap: 10px;
   color: var(--text-dim);
 }
+
+/* ── MINDMAP VIEW ── */
+#mindmap-view {
+  display: none;
+  flex: 1;
+  overflow: hidden;
+  flex-direction: column;
+  background: var(--bg);
+  min-height: 0;
+}
+#mm-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+#mm-body::-webkit-scrollbar { width: 5px; height: 5px; }
+#mm-body::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+
+/* Mindmap box nodes */
+.mm-node-g { cursor: pointer; }
+.mm-node-rect {
+  rx: 6;
+  ry: 6;
+  transition: filter 0.15s;
+}
+.mm-node-g:hover .mm-node-rect { filter: brightness(1.15); }
+
+/* Mindmap link paths */
+.mm-edge {
+  fill: none;
+  stroke-width: 1.5px;
+  transition: stroke-opacity 0.2s;
+}
+
+/* Highlight / dim states */
+.mm-node-g.mm-dim .mm-node-rect { opacity: 0.12; }
+.mm-node-g.mm-dim text { opacity: 0.12; }
+.mm-edge.mm-dim { stroke-opacity: 0.05; }
+.mm-node-g.mm-highlight .mm-node-rect { filter: drop-shadow(0 0 6px rgba(124,58,237,0.6)); }
+
+/* Mindmap match highlight */
+.mm-node-g.mm-match .mm-node-rect { stroke: var(--accent) !important; }
+.mm-node-g.mm-match text { fill: var(--purple) !important; }
+
+/* Collapse triangle indicator */
+.mm-tri { pointer-events: none; }
+
+/* Status pills inside mindmap nodes */
+.mm-status-pill {
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* Highlighted edges in branch */
+.mm-edge.mm-edge-highlight {
+  stroke-opacity: 1 !important;
+  stroke-width: 2.5px !important;
+  stroke: #7c3aed !important;
+  filter: drop-shadow(0 0 4px rgba(124,58,237,0.55));
+  transition: stroke-opacity 0.2s, stroke-width 0.2s, stroke 0.2s, filter 0.2s;
+}
+
+/* Inline path tooltip above hovered mindmap node */
+#mm-inline-tip {
+  position: fixed;
+  z-index: 1500;
+  background: rgba(14,14,22,0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #3d3d60;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  white-space: nowrap;
+  max-width: 520px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.7), 0 0 0 1px rgba(124,58,237,0.2);
+  transform: translateY(4px);
+}
+#mm-inline-tip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+#mm-inline-tip .ipt-domain { color: #38bdf8; font-weight: 600; }
+#mm-inline-tip .ipt-sep    { color: #3d3d60; }
+#mm-inline-tip .ipt-seg    { color: #6868a0; }
+#mm-inline-tip .ipt-cur    { color: #a78bfa; font-weight: 700; }
+
 </style>
+
+<!-- MINDMAP VIEW -->
+<div id="mindmap-view" style="display:none;flex:1;overflow:hidden;flex-direction:column;background:var(--bg);">
+  <!-- mindmap toolbar -->
+  <div id="mm-toolbar" style="
+    display:flex;align-items:center;gap:8px;padding:8px 14px;
+    background:var(--surface);border-bottom:1px solid var(--border);
+    flex-shrink:0;flex-wrap:wrap;">
+    <input id="mm-search" type="text" placeholder="🔍 filter by domain, path, status…"
+      oninput="renderMindmap()" style="
+      flex:1;min-width:180px;background:var(--surface2);border:1px solid var(--border);
+      color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;
+      padding:5px 10px;border-radius:6px;outline:none;transition:border-color 0.15s;"
+      onfocus="this.style.borderColor='var(--border-bright)'"
+      onblur="this.style.borderColor='var(--border)'">
+    <div style="display:flex;gap:3px;flex-wrap:wrap;" id="mm-filter-pills">
+      <div class="log-pill active" data-mmf="all"    onclick="setMmFilter('all',this)">All</div>
+      <div class="log-pill"        data-mmf="api"    onclick="setMmFilter('api',this)">API</div>
+      <div class="log-pill"        data-mmf="2xx"    onclick="setMmFilter('2xx',this)">2xx</div>
+      <div class="log-pill"        data-mmf="3xx"    onclick="setMmFilter('3xx',this)">3xx</div>
+      <div class="log-pill"        data-mmf="4xx"    onclick="setMmFilter('4xx',this)">4xx</div>
+      <div class="log-pill"        data-mmf="5xx"    onclick="setMmFilter('5xx',this)">5xx</div>
+      <div class="log-pill"        data-mmf="static" onclick="setMmFilter('static',this)">Static</div>
+      <div class="log-pill"        data-mmf="null"   onclick="setMmFilter('null',this)">Silent</div>
+    </div>
+    <div id="mm-count" style="font-size:10px;color:var(--text-dim);white-space:nowrap;flex-shrink:0;"></div>
+    <div style="display:flex;gap:4px;">
+      <div class="log-pill" id="mm-expand-btn" onclick="mmExpandAll()" title="Expand all">⊕ All</div>
+      <div class="log-pill" id="mm-collapse-btn" onclick="mmCollapseAll()" title="Collapse all">⊖ All</div>
+    </div>
+  </div>
+  <!-- mindmap filetype pills -->
+  <div id="mm-filetype-wrap" style="display:none;align-items:center;gap:6px;padding:4px 14px 6px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
+    <span style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);flex-shrink:0;">File Type</span>
+    <div id="mm-filetype-pills" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
+  </div>
+  <!-- mindmap body: svg rendered here -->
+  <div id="mm-body" style="flex:1;overflow:auto;padding:20px 10px 40px;"></div>
+</div>
 
 <!-- LOG DETAIL MODAL -->
 <div id="log-modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:300;align-items:center;justify-content:center;">
@@ -1288,6 +1423,9 @@
 #log-modal-body::-webkit-scrollbar { width:4px; }
 #log-modal-body::-webkit-scrollbar-thumb { background:var(--border-bright);border-radius:2px; }
 </style>
+
+<!-- MINDMAP INLINE PATH TIP -->
+<div id="mm-inline-tip"></div>
 
 <!-- TOOLTIP -->
 <div id="tooltip">
@@ -1688,6 +1826,7 @@ function initGraph() {
   activeFiletype = null;
   logFiletype = null;
   treeFiletype = null;
+  mmFiletype = null;
   const si = document.getElementById('graph-search');
   if (si) si.value = '';
   document.getElementById('graph-search-clear')?.classList.remove('visible');
@@ -1704,6 +1843,7 @@ function initGraph() {
   kickSim(null);
   if (currentView === 'log') renderLog();
   if (currentView === 'tree') renderTree();
+  if (currentView === 'mindmap') renderMindmap();
 }
 
 function showDragHint() {
@@ -2124,6 +2264,8 @@ function buildFiletypePills() {
   injectFiletypePillsInto('log-filetype-pills', 'log-filetype-wrap', setLogFiletype, detected);
   // Tree view pills
   injectFiletypePillsInto('tree-filetype-pills', 'tree-filetype-wrap', setTreeFiletype, detected);
+  // Mindmap view pills
+  injectFiletypePillsInto('mm-filetype-pills', 'mm-filetype-wrap', setMmFiletype, detected);
 }
 
 function injectFiletypePillsInto(pillsId, wrapId, setter, detected) {
@@ -3259,27 +3401,35 @@ let currentView = 'graph';
 
 function switchView(view) {
   currentView = view;
-  const graphEl = document.getElementById('main');
-  const logEl   = document.getElementById('log-view');
-  const treeEl  = document.getElementById('tree-view');
-  const btnG    = document.getElementById('btn-graph');
-  const btnL    = document.getElementById('btn-log');
-  const btnT    = document.getElementById('btn-tree');
+  const graphEl   = document.getElementById('main');
+  const logEl     = document.getElementById('log-view');
+  const treeEl    = document.getElementById('tree-view');
+  const mmEl      = document.getElementById('mindmap-view');
+  const btnG      = document.getElementById('btn-graph');
+  const btnL      = document.getElementById('btn-log');
+  const btnT      = document.getElementById('btn-tree');
+  const btnM      = document.getElementById('btn-mindmap');
 
   graphEl.style.display = 'none';
   logEl.style.display   = 'none';
   treeEl.style.display  = 'none';
+  mmEl.style.display    = 'none';
   btnG.classList.remove('active');
   btnL.classList.remove('active');
   btnT.classList.remove('active');
+  btnM.classList.remove('active');
 
   if (view === 'graph') {
     graphEl.style.display = 'flex';
     btnG.classList.add('active');
   } else if (view === 'tree') {
-    treeEl.style.display = 'flex';  // CSS class handles flex-direction, overflow etc.
+    treeEl.style.display = 'flex';
     btnT.classList.add('active');
     renderTree();
+  } else if (view === 'mindmap') {
+    mmEl.style.display = 'flex';
+    btnM.classList.add('active');
+    renderMindmap();
   } else {
     logEl.style.display = 'flex';
     btnL.classList.add('active');
@@ -3727,6 +3877,556 @@ function renderLog() {
 }
 
 // ══════════════════════════════════════════
+//  MINDMAP VIEW
+// ══════════════════════════════════════════
+// ── Mindmap SVG/zoom handles (persistent across redraws)
+let mmSvg = null, mmG = null, mmZoom = null;
+
+let mmFilter   = 'all';
+let mmFiletype = null;
+let mmCollapsed = {};
+
+function setMmFilter(f, el) {
+  mmFilter = f;
+  document.querySelectorAll('[data-mmf]').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderMindmap();
+}
+
+function setMmFiletype(ft, el) {
+  if (mmFiletype === ft) {
+    mmFiletype = null;
+    document.querySelectorAll('#mm-filetype-pills .log-pill').forEach(p => p.classList.remove('active'));
+  } else {
+    mmFiletype = ft;
+    document.querySelectorAll('#mm-filetype-pills .log-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+  }
+  renderMindmap();
+}
+
+function mmExpandAll() {
+  mmCollapsed = {};
+  renderMindmap();
+}
+function mmCollapseAll() {
+  if (!data) return;
+  // Walk every node key built by the tree builder and collapse all that have children
+  // We just mark domain-level keys; deeper nodes collapse by default already
+  const eps = Object.entries(data.endpoints || {});
+  const domains = [...new Set(eps.map(([url]) => getDomain(url)))];
+  domains.forEach(dom => { mmCollapsed[dom] = true; });
+  renderMindmap();
+}
+
+function mmEpPassesFilter(ep) {
+  if (!ep) return false;
+  if (mmFilter === 'api')    return ep.is_api;
+  if (mmFilter === 'static') return isStaticAsset(ep.url);
+  if (mmFilter === 'null')   return isNullEndpoint(ep);
+  const s = getBestStatus(ep);
+  if (mmFilter === '2xx') return !!(s >= 200 && s < 300);
+  if (mmFilter === '3xx') return !!(s >= 300 && s < 400);
+  if (mmFilter === '4xx') return !!(s >= 400 && s < 500);
+  if (mmFilter === '5xx') return !!(s >= 500);
+  if (mmFiletype) return endpointMatchesFiletype(ep, mmFiletype);
+  return true;
+}
+
+function renderMindmap() {
+  if (!data) return;
+  const container = document.getElementById('mm-body');
+  const search    = (document.getElementById('mm-search')?.value || '').toLowerCase();
+  const eps       = Object.entries(data.endpoints || {});
+
+  // ── 1. Build plain-object tree from URLs ────────────────────────────
+  // root → { domainKey: { name, _ep, _url, _status, _domain, children:{} } }
+  const rootObj = { name: '__ROOT__', children: {}, _ep: null };
+
+  let shownCount = 0;
+  eps.forEach(([url, ep]) => {
+    if (!mmEpPassesFilter(ep)) return;
+    const searchable = (url + ' ' +
+      Object.entries(ep.requests || {}).map(([m, d]) => m + ' ' + (d?.code || '')).join(' ')).toLowerCase();
+    if (search && !searchable.includes(search)) return;
+
+    shownCount++;
+    const dom = getDomain(url);
+    let pathStr;
+    try { pathStr = new URL(url).pathname.replace(/^\//, '').replace(/\/$/, ''); } catch { pathStr = ''; }
+    const segs = pathStr ? pathStr.split('/') : [];
+
+    if (!rootObj.children[dom]) rootObj.children[dom] = { name: dom, children: {}, _ep: null, _domain: true };
+    let cur = rootObj.children[dom];
+    segs.forEach(seg => {
+      if (!cur.children[seg]) cur.children[seg] = { name: seg, children: {}, _ep: null };
+      cur = cur.children[seg];
+    });
+    cur._ep     = ep;
+    cur._url    = url;
+    cur._status = getBestStatus(ep);
+  });
+
+  document.getElementById('mm-count').textContent =
+    shownCount + ' endpoint' + (shownCount !== 1 ? 's' : '');
+
+  if (shownCount === 0) {
+    container.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:center;height:200px;' +
+      'color:var(--text-dim);font-size:12px;">No endpoints match.</div>';
+    mmSvg = mmG = mmZoom = null;
+    return;
+  }
+
+  // ── 2. Convert to flat array with _key, _parent ref ─────────────────
+  function buildFlatNodes(obj, parentKey) {
+    return Object.values(obj.children).map(child => {
+      const key = parentKey ? parentKey + '/' + child.name : child.name;
+      child._key = key;
+      child._parentKey = parentKey;
+      child._flatChildren = buildFlatNodes(child, key);
+      return child;
+    });
+  }
+  const domainNodes = buildFlatNodes(rootObj, '');
+
+  // ── 3. Collapse helpers ──────────────────────────────────────────────
+  // Default: domain roots expanded, everything else collapsed
+  function isCollapsed(node) {
+    if (mmCollapsed[node._key] !== undefined) return mmCollapsed[node._key];
+    // Domain nodes (depth 0) expanded by default; deeper collapsed
+    return !node._domain;
+  }
+  function getVisKids(node) {
+    return isCollapsed(node) ? [] : node._flatChildren;
+  }
+
+  // ── 4. Layout constants ──────────────────────────────────────────────
+  const BOX_W   = 190;  // px — box width (fixed; status pills fit inside)
+  const BOX_H   = 34;   // px — box height
+  const COL_GAP = 54;   // horizontal gap between parent right edge and child left edge
+  const ROW_GAP = 8;    // vertical gap between siblings
+
+  // Measure subtree height (accounting for collapse)
+  function subtreeH(node) {
+    const kids = getVisKids(node);
+    if (!kids.length) return BOX_H;
+    const total = kids.reduce((s, k) => s + subtreeH(k), 0) + (kids.length - 1) * ROW_GAP;
+    return Math.max(BOX_H, total);
+  }
+
+  // Assign _x, _y to each visible node
+  function layout(node, x, y) {
+    const sh = subtreeH(node);
+    node._x = x;
+    node._y = y + sh / 2 - BOX_H / 2;
+    const kids = getVisKids(node);
+    if (!kids.length) return;
+    let cy = y;
+    kids.forEach(kid => {
+      const kh = subtreeH(kid);
+      layout(kid, x + BOX_W + COL_GAP, cy);
+      cy += kh + ROW_GAP;
+    });
+  }
+
+  const PAD = 24;
+  let curY = PAD;
+  domainNodes.forEach(d => {
+    layout(d, PAD, curY);
+    curY += subtreeH(d) + 28; // gap between domains
+  });
+
+  // Compute bounding box of all laid-out nodes
+  function collectBounds(nodes, minX, minY, maxX, maxY) {
+    nodes.forEach(n => {
+      if (n._x !== undefined) {
+        minX = Math.min(minX, n._x);
+        minY = Math.min(minY, n._y);
+        maxX = Math.max(maxX, n._x + BOX_W);
+        maxY = Math.max(maxY, n._y + BOX_H);
+      }
+      const kids = getVisKids(n);
+      if (kids.length) { [minX, minY, maxX, maxY] = collectBoundsArr(kids, minX, minY, maxX, maxY); }
+    });
+    return [minX, minY, maxX, maxY];
+  }
+  function collectBoundsArr(nodes, a, b, c, d) { return collectBounds(nodes, a, b, c, d); }
+  let [bMinX, bMinY, bMaxX, bMaxY] = collectBounds(domainNodes, Infinity, Infinity, -Infinity, -Infinity);
+  const svgW = Math.max(bMaxX + PAD * 2, 800);
+  const svgH = Math.max(bMaxY + PAD * 2, 500);
+
+  // ── 5. Build/reset SVG with zoom ────────────────────────────────────
+  container.innerHTML = '';
+
+  mmSvg = d3.select(container)
+    .append('svg')
+    .attr('width',  '100%')
+    .attr('height', '100%')
+    .style('position', 'absolute')
+    .style('inset', '0')
+    .style('font-family', "'JetBrains Mono', monospace")
+    .style('cursor', 'grab');
+
+  mmZoom = d3.zoom()
+    .scaleExtent([0.08, 4])
+    .on('zoom', e => {
+      mmG.attr('transform', e.transform);
+      mmSvg.style('cursor', e.sourceEvent?.type === 'mousedown' ? 'grabbing' : 'grab');
+    });
+  mmSvg.call(mmZoom);
+  mmSvg.on('dblclick.zoom', null); // disable double-click zoom
+
+  mmG = mmSvg.append('g').attr('class', 'mm-root-g');
+  const defs = mmSvg.append('defs');
+
+  // ── 6. Color helpers ─────────────────────────────────────────────────
+  function nodeFill(node) {
+    if (node._domain) return '#0c1929';
+    if (!node._ep && node._flatChildren.length) return '#13131f'; // branch
+    const ep = node._ep;
+    if (!ep) return '#13131f';
+    if (isNullEndpoint(ep)) return '#111827';
+    if (ep.is_api) return 'rgba(124,58,237,0.16)';
+    const s = node._status;
+    if (s >= 500) return 'rgba(251,146,60,0.10)';
+    if (s >= 400) return 'rgba(244,63,94,0.10)';
+    if (s >= 300) return 'rgba(245,158,11,0.08)';
+    return '#111827';
+  }
+  function nodeStroke(node) {
+    if (node._domain) return '#0ea5e9';
+    if (!node._ep && node._flatChildren.length) return '#2a2a40';
+    const ep = node._ep;
+    if (!ep) return '#2a2a40';
+    if (isNullEndpoint(ep)) return 'rgba(100,116,139,0.3)';
+    if (ep.is_api) return '#7c3aed';
+    const s = node._status;
+    if (s >= 500) return '#fb923c80';
+    if (s >= 400) return '#f43f5e80';
+    if (s >= 300) return '#f59e0b80';
+    if (s >= 200) return 'rgba(34,211,160,0.35)';
+    return '#2a2a40';
+  }
+  function labelFill(node) {
+    if (node._domain) return '#38bdf8';
+    if (!node._ep && node._flatChildren.length) return '#9898c0';
+    const ep = node._ep;
+    if (!ep) return '#9898c0';
+    if (ep.is_api) return '#a78bfa';
+    if (isNullEndpoint(ep)) return '#4b5563';
+    const s = node._status;
+    if (s >= 500) return '#fb923c';
+    if (s >= 400) return '#f87171';
+    if (s >= 300) return '#fbbf24';
+    return '#c8c8e8';
+  }
+  function edgeStroke(node) {
+    return node._domain ? '#0ea5e930' : '#2a2a4055';
+  }
+  function statusPillColor(code) {
+    const sc = Math.floor(code / 100);
+    return sc === 2 ? '#22d3a0' : sc === 3 ? '#f59e0b' : sc >= 4 ? '#f43f5e' : '#64748b';
+  }
+
+  // ── 7. Draw edges (before nodes so they sit under) ───────────────────
+  function drawEdges(node) {
+    const kids = getVisKids(node);
+    kids.forEach(kid => {
+      const sx = node._x + BOX_W;
+      const sy = node._y + BOX_H / 2;
+      const tx = kid._x;
+      const ty = kid._y + BOX_H / 2;
+      const mx = sx + (tx - sx) / 2;
+      mmG.append('path')
+        .attr('class', 'mm-edge')
+        .datum({ sourceKey: node._key, targetKey: kid._key })
+        .attr('d', `M${sx},${sy} C${mx},${sy} ${mx},${ty} ${tx},${ty}`)
+        .attr('stroke', edgeStroke(node))
+        .attr('stroke-width', node._domain ? 1.5 : 1);
+      drawEdges(kid);
+    });
+  }
+  domainNodes.forEach(drawEdges);
+
+  // ── 8. Draw nodes ────────────────────────────────────────────────────
+  function drawNode(node) {
+    const x = node._x, y = node._y;
+    const kids     = node._flatChildren;
+    const hasKids  = kids.length > 0;
+    const collapsed = isCollapsed(node);
+    const ep        = node._ep;
+
+    const g = mmG.append('g')
+      .attr('class', 'mm-node-g')
+      .attr('transform', `translate(${x},${y})`)
+      .datum(node);
+
+    // ── Background rect ─────────────────────────────────────────────
+    g.append('rect')
+      .attr('class', 'mm-node-rect')
+      .attr('width', BOX_W)
+      .attr('height', BOX_H)
+      .attr('rx', 6)
+      .attr('fill', nodeFill(node))
+      .attr('stroke', nodeStroke(node))
+      .attr('stroke-width', node._domain ? 1.5 : 1);
+
+    // ── Right side: collapse triangle (for parent nodes) ────────────
+    const TRI_ZONE = hasKids ? 18 : 0; // px reserved on right for triangle
+    if (hasKids) {
+      const triX = BOX_W - 12;
+      const triY = BOX_H / 2;
+      const ts   = 4;
+      const pts  = collapsed
+        ? `${triX - ts},${triY - ts} ${triX + ts},${triY} ${triX - ts},${triY + ts}`
+        : `${triX - ts},${triY - ts} ${triX + ts},${triY - ts} ${triX},${triY + ts}`;
+      g.append('polygon')
+        .attr('class', 'mm-tri')
+        .attr('points', pts)
+        .attr('fill', node._domain ? '#38bdf860' : '#6868a060');
+    }
+
+    // ── Left content area ────────────────────────────────────────────
+    // Layout (left → right inside box):
+    //   [icon 16px?] [label flex] [status pills] [TRI_ZONE]
+    //
+    // We compute how much space status pills need, then clip label to remaining space.
+
+    // Build status pills info (only for endpoint leaves with data)
+    let pills = []; // { code, color }
+    if (ep) {
+      if (isNullEndpoint(ep)) {
+        pills = [{ label: 'SIL', color: '#64748b', bg: 'rgba(100,116,139,0.15)' }];
+      } else {
+        const reqs = Object.entries(ep.requests || {}).filter(([, d]) => d && d.code);
+        // Show unique status codes only (avoid duplicates like 200/200)
+        const seen = new Set();
+        reqs.forEach(([, d]) => {
+          const code = parseInt(d.code);
+          if (!seen.has(code)) {
+            seen.add(code);
+            const col = statusPillColor(code);
+            pills.push({ label: String(code), color: col, bg: col + '22' });
+          }
+        });
+      }
+    }
+
+    // Build content-type pill (inline, next to status pills, only for endpoint leaves)
+    let ctPill = null; // { label, color, bg }
+    if (ep && !node._domain && !isNullEndpoint(ep)) {
+      const ct = getContentType(ep);
+      if (ct) {
+        let ctShort = ct.split('/').pop().split(';')[0].trim();
+        if (ctShort === 'javascript') ctShort = 'js';
+        else if (ctShort === 'plain') ctShort = 'txt';
+        else if (ctShort === 'x-www-form-urlencoded') ctShort = 'form';
+        if (ctShort.length > 8) ctShort = ctShort.slice(0, 7) + '…';
+        ctPill = { label: ctShort, color: '#52527a', bg: 'rgba(42,42,64,0.6)', stroke: '#3d3d60' };
+      }
+    }
+
+    // Pill dimensions
+    const PILL_H    = 15;
+    const PILL_PAD  = 5;
+    const PILL_GAP  = 3;
+    const PILL_FONT = 8;
+    const charPx    = 5.6; // approx char width at PILL_FONT size
+    const pillWidths = pills.map(p => Math.max(24, p.label.length * charPx + PILL_PAD * 2));
+    const ctPillW    = ctPill ? Math.max(20, ctPill.label.length * charPx + PILL_PAD * 2) : 0;
+    const totalPillW = (pills.length
+      ? pillWidths.reduce((s, w) => s + w, 0) + (pills.length - 1) * PILL_GAP
+      : 0) + (ctPill ? (pills.length ? PILL_GAP : 0) + ctPillW : 0) + (pills.length || ctPill ? 6 : 0);
+
+    // Icon
+    let labelX  = 8;
+    const ICON_W = 16;
+    if (node._domain) {
+      g.append('text')
+        .attr('x', labelX)
+        .attr('y', BOX_H / 2)
+        .attr('dy', '0.35em')
+        .attr('font-size', '11px')
+        .text('🌐');
+      labelX += ICON_W;
+    } else if (ep && ep.is_api) {
+      g.append('text')
+        .attr('x', labelX)
+        .attr('y', BOX_H / 2)
+        .attr('dy', '0.35em')
+        .attr('font-size', '9px')
+        .attr('fill', '#a78bfa')
+        .text('⚡');
+      labelX += 13;
+    }
+
+    // Clip label so it doesn't overflow into pills or triangle
+    const labelRight  = BOX_W - TRI_ZONE - totalPillW - 4;
+    const labelAvail  = Math.max(20, labelRight - labelX);
+    const clipId      = 'mmc-' + Math.random().toString(36).slice(2, 10);
+    defs.append('clipPath').attr('id', clipId)
+      .append('rect')
+        .attr('x', labelX).attr('y', 0)
+        .attr('width', labelAvail).attr('height', BOX_H);
+
+    g.append('text')
+      .attr('x', labelX)
+      .attr('y', BOX_H / 2)
+      .attr('dy', '0.35em')
+      .attr('text-anchor', 'start')
+      .attr('font-size', node._domain ? '11px' : '10px')
+      .attr('font-weight', node._domain ? '700' : '400')
+      .attr('fill', labelFill(node))
+      .attr('clip-path', `url(#${clipId})`)
+      .text(node.name);
+
+    // Draw status pills then CT pill (right-aligned before triangle zone)
+    let pillX = BOX_W - TRI_ZONE - totalPillW + 3;
+    pills.forEach((pill, i) => {
+      const pw = pillWidths[i];
+      g.append('rect')
+        .attr('x', pillX)
+        .attr('y', BOX_H / 2 - PILL_H / 2)
+        .attr('width', pw)
+        .attr('height', PILL_H)
+        .attr('rx', 3)
+        .attr('fill', pill.bg || 'rgba(0,0,0,0.3)')
+        .attr('stroke', pill.color)
+        .attr('stroke-width', 0.5);
+      g.append('text')
+        .attr('x', pillX + pw / 2)
+        .attr('y', BOX_H / 2)
+        .attr('dy', '0.35em')
+        .attr('text-anchor', 'middle')
+        .attr('font-size', PILL_FONT + 'px')
+        .attr('font-weight', '700')
+        .attr('fill', pill.color)
+        .text(pill.label);
+      pillX += pw + PILL_GAP;
+    });
+    if (ctPill) {
+      g.append('rect')
+        .attr('x', pillX)
+        .attr('y', BOX_H / 2 - PILL_H / 2)
+        .attr('width', ctPillW)
+        .attr('height', PILL_H)
+        .attr('rx', 3)
+        .attr('fill', ctPill.bg)
+        .attr('stroke', ctPill.stroke)
+        .attr('stroke-width', 0.5);
+      g.append('text')
+        .attr('x', pillX + ctPillW / 2)
+        .attr('y', BOX_H / 2)
+        .attr('dy', '0.35em')
+        .attr('text-anchor', 'middle')
+        .attr('font-size', PILL_FONT + 'px')
+        .attr('font-weight', '500')
+        .attr('fill', ctPill.color)
+        .text(ctPill.label);
+    }
+
+    // ── Interactions ─────────────────────────────────────────────────
+    g.style('cursor', hasKids ? 'pointer' : ep ? 'pointer' : 'default');
+
+    g.on('click', function(event) {
+      event.stopPropagation();
+      if (hasKids) {
+        mmCollapsed[node._key] = !collapsed;
+        renderMindmap();
+      } else if (ep) {
+        const epNode = nodes.find(n => n.id === node._url);
+        if (epNode) openLogModal(epNode);
+      }
+    });
+
+    // Branch highlight on hover
+    g.on('mouseenter', function(event) {
+      const branchKeys = new Set();
+      // ancestors
+      let parts = node._key.split('/');
+      for (let i = 1; i <= parts.length; i++) branchKeys.add(parts.slice(0, i).join('/'));
+      // descendants
+      function collectDown(n) {
+        branchKeys.add(n._key);
+        (n._flatChildren || []).forEach(collectDown);
+      }
+      collectDown(node);
+
+      // Nodes: dim/highlight
+      mmG.selectAll('.mm-node-g').each(function(d) {
+        const inBranch = d && branchKeys.has(d._key);
+        d3.select(this).classed('mm-dim', !inBranch).classed('mm-highlight', inBranch);
+      });
+
+      // Edges: dim non-branch, highlight branch edges
+      mmG.selectAll('.mm-edge').each(function(d) {
+        if (!d) { d3.select(this).classed('mm-dim', true).classed('mm-edge-highlight', false); return; }
+        const inBranch = branchKeys.has(d.sourceKey) && branchKeys.has(d.targetKey);
+        d3.select(this)
+          .classed('mm-dim', !inBranch)
+          .classed('mm-edge-highlight', inBranch);
+      });
+
+      // ── Inline path tip ──────────────────────────────────────────
+      const mmTip = document.getElementById('mm-inline-tip');
+      if (mmTip) {
+        // Build path segments from _key (format: "domain/seg1/seg2/...")
+        const keyParts = node._key.split('/');
+        let tipHtml = '';
+        keyParts.forEach((seg, i) => {
+          if (i === 0) {
+            tipHtml += `<span class="ipt-domain">${seg}</span>`;
+          } else {
+            tipHtml += `<span class="ipt-sep">/</span>`;
+            if (i === keyParts.length - 1) {
+              tipHtml += `<span class="ipt-cur">${seg}</span>`;
+            } else {
+              tipHtml += `<span class="ipt-seg">${seg}</span>`;
+            }
+          }
+        });
+        mmTip.innerHTML = tipHtml;
+        mmTip.classList.add('visible');
+
+        // Position above the hovered element
+        const rect = this.getBoundingClientRect();
+        const tipH = mmTip.offsetHeight || 26;
+        const tipW = mmTip.offsetWidth || 200;
+        let tx = rect.left + rect.width / 2 - tipW / 2;
+        let ty = rect.top - tipH - 8;
+        if (ty < 8) ty = rect.bottom + 8;
+        if (tx < 8) tx = 8;
+        if (tx + tipW > window.innerWidth - 8) tx = window.innerWidth - tipW - 8;
+        mmTip.style.left = tx + 'px';
+        mmTip.style.top  = ty + 'px';
+      }
+    });
+
+    g.on('mouseleave', function() {
+      mmG.selectAll('.mm-node-g').classed('mm-dim', false).classed('mm-highlight', false);
+      mmG.selectAll('.mm-edge').classed('mm-dim', false).classed('mm-edge-highlight', false);
+      const mmTip = document.getElementById('mm-inline-tip');
+      if (mmTip) mmTip.classList.remove('visible');
+    });
+
+    // Recurse
+    if (!collapsed) kids.forEach(drawNode);
+  }
+
+  domainNodes.forEach(drawNode);
+
+  // ── 9. Search match highlight ─────────────────────────────────────
+  if (search) {
+    mmG.selectAll('.mm-node-g').each(function(d) {
+      if (!d) return;
+      const hay = ((d._url || '') + ' ' + d.name).toLowerCase();
+      if (hay.includes(search)) d3.select(this).classed('mm-match', true);
+    });
+  }
+}
+
+// ══════════════════════════════════════════
 //  CSV EXPORT
 // ══════════════════════════════════════════
 function exportLogCsv() {
@@ -3761,5 +4461,6 @@ function exportLogCsv() {
 }
 
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 </body>
 </html>
