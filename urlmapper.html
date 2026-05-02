@@ -3906,7 +3906,24 @@ function setMmFiletype(ft, el) {
 }
 
 function mmExpandAll() {
+  if (!data) return;
+  // We can't just clear mmCollapsed because isCollapsed() defaults non-domain
+  // nodes to collapsed when there's no entry. We need to explicitly set every
+  // key to false so they all render as expanded.
   mmCollapsed = {};
+  const eps = Object.entries(data.endpoints || {});
+  eps.forEach(([url]) => {
+    const dom = getDomain(url);
+    let pathStr;
+    try { pathStr = new URL(url).pathname.replace(/^\//, '').replace(/\/$/, ''); } catch { pathStr = ''; }
+    const segs = pathStr ? pathStr.split('/') : [];
+    // mark domain and every ancestor path segment as expanded
+    mmCollapsed[dom] = false;
+    segs.forEach((_, i) => {
+      const key = dom + '/' + segs.slice(0, i + 1).join('/');
+      mmCollapsed[key] = false;
+    });
+  });
   renderMindmap();
 }
 function mmCollapseAll() {
