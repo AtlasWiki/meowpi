@@ -1043,6 +1043,11 @@
       onmouseover="this.style.borderColor='var(--border-bright)';this.style.color='var(--text)'"
       onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">⬇ CSV</button>
   </div>
+  <!-- log filetype pills -->
+  <div id="log-filetype-wrap" style="display:none;align-items:center;gap:6px;padding:4px 14px 6px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
+    <span style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);flex-shrink:0;">File Type</span>
+    <div id="log-filetype-pills" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
+  </div>
   <!-- log body -->
   <div id="log-body" style="flex:1;overflow-y:auto;overflow-x:hidden;padding:0;"></div>
 </div>
@@ -1075,6 +1080,11 @@
     <div id="tree-sort-btn" class="log-pill" onclick="toggleTreeSort(this)" style="flex-shrink:0;display:flex;align-items:center;gap:4px;">
       ⇅ A–Z
     </div>
+  </div>
+  <!-- tree filetype pills -->
+  <div id="tree-filetype-wrap" style="display:none;align-items:center;gap:6px;padding:4px 14px 6px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;">
+    <span style="font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-dim);flex-shrink:0;">File Type</span>
+    <div id="tree-filetype-pills" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
   </div>
   <!-- tree body -->
   <div id="tree-body"></div>
@@ -1395,6 +1405,46 @@ function getDemoData() {
         "url": "https://status.wepwn.ma", "is_api": false, "api_score": 0,
         "headers": { "Content-Type": "text/html" },
         "requests": { "GET": { "code": 200, "message": "OK", "content_type": "text/html" } }
+      },
+      "https://app.wepwn.ma/config.php": {
+        "url": "https://app.wepwn.ma/config.php", "is_api": false, "api_score": 0,
+        "headers": { "Content-Type": "text/html; charset=utf-8" },
+        "requests": { "GET": { "code": 200, "message": "OK", "content_type": "text/html" } }
+      },
+      "https://app.wepwn.ma/.env": {
+        "url": "https://app.wepwn.ma/.env", "is_api": false, "api_score": 0,
+        "headers": {},
+        "requests": { "GET": { "code": 403, "message": "Forbidden" } }
+      },
+      "https://app.wepwn.ma/backup.sql": {
+        "url": "https://app.wepwn.ma/backup.sql", "is_api": false, "api_score": 0,
+        "headers": {},
+        "requests": { "GET": { "code": 404, "message": "Not Found" } }
+      },
+      "https://app.wepwn.ma/swagger/index.html": {
+        "url": "https://app.wepwn.ma/swagger/index.html", "is_api": true, "api_score": 2,
+        "headers": { "Content-Type": "text/html" },
+        "requests": { "GET": { "code": 200, "message": "OK", "content_type": "text/html" } }
+      },
+      "https://api.wepwn.ma/openapi.json": {
+        "url": "https://api.wepwn.ma/openapi.json", "is_api": true, "api_score": 2,
+        "headers": { "Content-Type": "application/json" },
+        "requests": { "GET": { "code": 200, "message": "OK", "content_type": "application/json" } }
+      },
+      "https://app.wepwn.ma/debug.log": {
+        "url": "https://app.wepwn.ma/debug.log", "is_api": false, "api_score": 0,
+        "headers": {},
+        "requests": { "GET": { "code": 200, "message": "OK", "content_type": "text/plain" } }
+      },
+      "https://api.wepwn.ma/graphql": {
+        "url": "https://api.wepwn.ma/graphql", "is_api": true, "api_score": 3,
+        "headers": { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        "requests": { "POST": { "code": 200, "message": "OK", "content_type": "application/json" }, "GET": { "code": 200, "message": "OK", "content_type": "application/json" } }
+      },
+      "https://app.wepwn.ma/sitemap.xml": {
+        "url": "https://app.wepwn.ma/sitemap.xml", "is_api": false, "api_score": 0,
+        "headers": { "Content-Type": "application/xml" },
+        "requests": { "GET": { "code": 200, "message": "OK", "content_type": "application/xml" } }
       }
     }
   };
@@ -1465,6 +1515,8 @@ function shortCt(ct) {
   if (ct.includes('html')) return 'html';
   if (ct.includes('javascript')) return 'js';
   if (ct.includes('css')) return 'css';
+  if (ct.includes('xml')) return 'xml';
+  if (ct.includes('php')) return 'php';
   if (ct.includes('image')) return ct.split('/')[1]?.split(';')[0] || 'img';
   if (ct.includes('video')) return 'video';
   if (ct.includes('font')) return 'font';
@@ -1634,6 +1686,8 @@ function initGraph() {
   // reset graph search state on new load
   graphSearch = '';
   activeFiletype = null;
+  logFiletype = null;
+  treeFiletype = null;
   const si = document.getElementById('graph-search');
   if (si) si.value = '';
   document.getElementById('graph-search-clear')?.classList.remove('visible');
@@ -1854,10 +1908,7 @@ function updateFilterBtnState() {
 
 function setFilter(f, el) {
   activeFilter = f;
-  activeFiletype = null;
-  // clear filetype pill active states
-  document.querySelectorAll('#filetype-pills .filter-pill').forEach(p => p.classList.remove('active'));
-  // update status pills
+  // only clear status pills — filetype is independent
   document.querySelectorAll('#filterbar-pills > .filter-pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   updateFilterBtnState();
@@ -1867,7 +1918,6 @@ function setFilter(f, el) {
 
 function setFiletype(ft, el) {
   if (activeFiletype === ft) {
-    // toggle off
     activeFiletype = null;
     el.classList.remove('active');
   } else {
@@ -1932,20 +1982,7 @@ function nodeMatchesFiletype(node) {
   if (!activeFiletype) return true;
   const ep = node.endpoint;
   if (!ep) return true;
-  const ct = getContentType(ep).toLowerCase();
-  const url = ep.url.toLowerCase();
-  // match content-type OR file extension in URL
-  switch (activeFiletype) {
-    case 'json':  return ct.includes('json') || url.match(/\.json(\?|$)/);
-    case 'html':  return ct.includes('html') || url.match(/\.html?(\?|$)/);
-    case 'js':    return ct.includes('javascript') || url.match(/\.js(\?|$)/);
-    case 'css':   return ct.includes('css') || url.match(/\.css(\?|$)/);
-    case 'image': return ct.includes('image') || url.match(/\.(png|jpg|jpeg|gif|svg|webp|ico)(\?|$)/i);
-    case 'font':  return ct.includes('font') || url.match(/\.(woff2?|otf|ttf|eot)(\?|$)/i);
-    case 'video': return ct.includes('video') || url.match(/\.(mp4|webm|ogg|mov)(\?|$)/i);
-    case 'text':  return (ct.includes('text') && !ct.includes('html') && !ct.includes('css')) || url.match(/\.(txt|md|csv)(\?|$)/i);
-    default:      return true;
-  }
+  return endpointMatchesFiletype(ep, activeFiletype);
 }
 
 function nodeVisible(node) {
@@ -1969,38 +2006,141 @@ function nodeVisible(node) {
   return true;
 }
 
-// Build filetype pills from actual data
-function buildFiletypePills() {
+// ══════════════════════════════════════════
+//  SHARED FILETYPE LOGIC (used by all views)
+// ══════════════════════════════════════════
+const FILETYPE_LABELS = {
+  json:    '{ } JSON',
+  xml:     '</> XML',
+  graphql: '⬡ GraphQL',
+  php:     '🐘 PHP',
+  html:    'HTML',
+  js:      'JS',
+  css:     'CSS',
+  image:   '🖼 Image',
+  font:    'Font',
+  video:   'Video',
+  text:    'Text',
+  // Bug hunter juicy types
+  env:     '🔑 .env',
+  config:  '⚙ Config',
+  backup:  '💾 Backup',
+  sql:     '🗄 SQL',
+  archive: '📦 Archive',
+  log:     '📋 Log',
+  yaml:    '📄 YAML',
+  wsdl:    '🔌 WSDL',
+  swagger: '📑 Swagger',
+};
+
+function detectFiletypes() {
   const detected = new Set();
   nodes.forEach(n => {
     if (n.type !== 'endpoint' || !n.endpoint) return;
-    const ct = getContentType(n.endpoint).toLowerCase();
+    const ct  = getContentType(n.endpoint).toLowerCase();
     const url = n.endpoint.url.toLowerCase();
-    if (ct.includes('json') || url.match(/\.json(\?|$)/))              detected.add('json');
-    if (ct.includes('php') || url.match(/\.json(\?|$)/))              detected.add('php');
-    if (ct.includes('html') || url.match(/\.html?(\?|$)/))             detected.add('html');
-    if (ct.includes('javascript') || url.match(/\.js(\?|$)/))          detected.add('js');
-    if (ct.includes('css') || url.match(/\.css(\?|$)/))                detected.add('css');
-    if (ct.includes('image') || url.match(/\.(png|jpg|jpeg|gif|svg|webp|ico)(\?|$)/i)) detected.add('image');
-    if (ct.includes('font') || url.match(/\.(woff2?|otf|ttf|eot)(\?|$)/i))            detected.add('font');
-    if (ct.includes('video') || url.match(/\.(mp4|webm|ogg|mov)(\?|$)/i))             detected.add('video');
-    if (ct.includes('text') && !ct.includes('html') && !ct.includes('css'))             detected.add('text');
+    // Common web types
+    if (ct.includes('json') || url.match(/\.json(\?|$)/))                              detected.add('json');
+    if (ct.includes('xml') || url.match(/\.xml(\?|$)/))                                detected.add('xml');
+    if (ct.includes('graphql') || url.match(/\/(graphql|gql)(\/|\?|$)/))               detected.add('graphql');
+    if (ct.includes('php') || url.match(/\.php(\?|$)/))                                detected.add('php');
+    if (ct.includes('html') || url.match(/\.html?(\?|$)/))                             detected.add('html');
+    if (ct.includes('javascript') || url.match(/\.js(\?|$)/))                          detected.add('js');
+    if (ct.includes('css') || url.match(/\.css(\?|$)/))                                detected.add('css');
+    if (ct.includes('image') || url.match(/\.(png|jpg|jpeg|gif|svg|webp|ico)(\?|$)/)) detected.add('image');
+    if (ct.includes('font') || url.match(/\.(woff2?|otf|ttf|eot)(\?|$)/))             detected.add('font');
+    if (ct.includes('video') || url.match(/\.(mp4|webm|ogg|mov)(\?|$)/))              detected.add('video');
+    if (ct.includes('text/plain') || url.match(/\.(txt|csv|md)(\?|$)/))               detected.add('text');
+    // Bug hunter juicy types
+    if (url.match(/\.env(\?|$)/) || url.match(/\/\.env\b/))                            detected.add('env');
+    if (url.match(/\.(conf|config|cfg|ini|properties)(\?|$)/))                         detected.add('config');
+    if (url.match(/\.(bak|old|orig|backup|swp|~)(\?|$)/))                              detected.add('backup');
+    if (ct.includes('sql') || url.match(/\.sql(\?|$)/))                                detected.add('sql');
+    if (ct.includes('zip') || ct.includes('gzip') || ct.includes('tar') ||
+        url.match(/\.(zip|gz|tar|tgz|rar|7z)(\?|$)/))                                 detected.add('archive');
+    if (url.match(/\.log(\?|$)/) || url.match(/\/logs?\//))                            detected.add('log');
+    if (url.match(/\.(ya?ml)(\?|$)/))                                                  detected.add('yaml');
+    if (ct.includes('wsdl') || url.match(/\.wsdl(\?|$)/) || url.match(/\?wsdl/i))    detected.add('wsdl');
+    if (url.match(/\/(swagger|openapi|api-docs)(\/|\?|$)/) ||
+        url.match(/\.(swagger\.json|openapi\.json|openapi\.yaml)(\?|$)/))              detected.add('swagger');
   });
+  return detected;
+}
 
-  const labels = { json:'JSON', html:'HTML', js:'JS', css:'CSS', image:'Images', font:'Fonts', video:'Video', text:'Text', php:'PHP' };
-  const wrap = document.getElementById('filetype-pills');
-  const wrapOuter = document.getElementById('filetype-pills-wrap');
-  if (!wrap || detected.size === 0) return;
-  wrap.innerHTML = '';
+function endpointMatchesFiletype(ep, ft) {
+  if (!ft) return true;
+  const ct  = getContentType(ep).toLowerCase();
+  const url = ep.url.toLowerCase();
+  switch (ft) {
+    case 'json':    return ct.includes('json') || !!url.match(/\.json(\?|$)/);
+    case 'xml':     return ct.includes('xml') || !!url.match(/\.xml(\?|$)/);
+    case 'graphql': return ct.includes('graphql') || !!url.match(/\/(graphql|gql)(\/|\?|$)/);
+    case 'php':     return ct.includes('php') || !!url.match(/\.php(\?|$)/);
+    case 'html':    return ct.includes('html') || !!url.match(/\.html?(\?|$)/);
+    case 'js':      return ct.includes('javascript') || !!url.match(/\.js(\?|$)/);
+    case 'css':     return ct.includes('css') || !!url.match(/\.css(\?|$)/);
+    case 'image':   return ct.includes('image') || !!url.match(/\.(png|jpg|jpeg|gif|svg|webp|ico)(\?|$)/);
+    case 'font':    return ct.includes('font') || !!url.match(/\.(woff2?|otf|ttf|eot)(\?|$)/);
+    case 'video':   return ct.includes('video') || !!url.match(/\.(mp4|webm|ogg|mov)(\?|$)/);
+    case 'text':    return ct.includes('text/plain') || !!url.match(/\.(txt|csv|md)(\?|$)/);
+    case 'env':     return !!url.match(/\.env(\?|$)/) || !!url.match(/\/\.env\b/);
+    case 'config':  return !!url.match(/\.(conf|config|cfg|ini|properties)(\?|$)/);
+    case 'backup':  return !!url.match(/\.(bak|old|orig|backup|swp|~)(\?|$)/);
+    case 'sql':     return ct.includes('sql') || !!url.match(/\.sql(\?|$)/);
+    case 'archive': return ct.includes('zip') || ct.includes('gzip') || ct.includes('tar') ||
+                           !!url.match(/\.(zip|gz|tar|tgz|rar|7z)(\?|$)/);
+    case 'log':     return !!url.match(/\.log(\?|$)/) || !!url.match(/\/logs?\//);
+    case 'yaml':    return !!url.match(/\.(ya?ml)(\?|$)/);
+    case 'wsdl':    return ct.includes('wsdl') || !!url.match(/\.wsdl(\?|$)/) || !!url.match(/\?wsdl/i);
+    case 'swagger': return !!url.match(/\/(swagger|openapi|api-docs)(\/|\?|$)/) ||
+                           !!url.match(/\.(swagger\.json|openapi\.json|openapi\.yaml)(\?|$)/);
+    default:        return true;
+  }
+}
+
+// Build filetype pills from actual data — injected into all three views
+function buildFiletypePills() {
+  const detected = detectFiletypes();
+
+  // Graph view pills (existing)
+  const graphWrap = document.getElementById('filetype-pills');
+  const graphWrapOuter = document.getElementById('filetype-pills-wrap');
+  if (graphWrap) {
+    graphWrap.innerHTML = '';
+    if (detected.size > 0) {
+      detected.forEach(ft => {
+        const pill = document.createElement('div');
+        pill.className = 'filter-pill';
+        pill.dataset.filetype = ft;
+        pill.textContent = FILETYPE_LABELS[ft] || ft;
+        pill.addEventListener('click', () => setFiletype(ft, pill));
+        graphWrap.appendChild(pill);
+      });
+      graphWrapOuter.style.display = 'block';
+    }
+  }
+
+  // Log view pills
+  injectFiletypePillsInto('log-filetype-pills', 'log-filetype-wrap', setLogFiletype, detected);
+  // Tree view pills
+  injectFiletypePillsInto('tree-filetype-pills', 'tree-filetype-wrap', setTreeFiletype, detected);
+}
+
+function injectFiletypePillsInto(pillsId, wrapId, setter, detected) {
+  const wrap = document.getElementById(wrapId);
+  const pills = document.getElementById(pillsId);
+  if (!wrap || !pills) return;
+  pills.innerHTML = '';
+  if (detected.size === 0) { wrap.style.display = 'none'; return; }
   detected.forEach(ft => {
     const pill = document.createElement('div');
-    pill.className = 'filter-pill';
+    pill.className = 'log-pill';
     pill.dataset.filetype = ft;
-    pill.textContent = labels[ft] || ft;
-    pill.addEventListener('click', () => setFiletype(ft, pill));
-    wrap.appendChild(pill);
+    pill.textContent = FILETYPE_LABELS[ft] || ft;
+    pill.addEventListener('click', () => setter(ft, pill));
+    pills.appendChild(pill);
   });
-  wrapOuter.style.display = 'block';
+  wrap.style.display = 'flex';
 }
 
 // ══════════════════════════════════════════
@@ -3151,6 +3291,7 @@ function switchView(view) {
 //  TREE STATE & RENDER
 // ══════════════════════════════════════════
 let treeFilter = 'all';
+let treeFiletype = null;
 let treeCollapsed = {};
 let treeSortByCount = false;
 
@@ -3168,16 +3309,31 @@ function setTreeFilter(f, el) {
   renderTree();
 }
 
+function setTreeFiletype(ft, el) {
+  if (treeFiletype === ft) {
+    treeFiletype = null;
+    el.classList.remove('active');
+  } else {
+    treeFiletype = ft;
+    document.querySelectorAll('#tree-filetype-pills .log-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+  }
+  renderTree();
+}
+
 function treePassesFilter(ep, node) {
   if (!ep) return false;
-  if (treeFilter === 'api')    return ep.is_api;
-  if (treeFilter === 'static') return isStaticAsset(ep.url);
-  if (treeFilter === 'null')   return isNullEndpoint(ep);
-  const s = node.status;
-  if (treeFilter === '2xx') return s >= 200 && s < 300;
-  if (treeFilter === '3xx') return s >= 300 && s < 400;
-  if (treeFilter === '4xx') return s >= 400 && s < 500;
-  if (treeFilter === '5xx') return s >= 500;
+  if (treeFilter === 'api')    { if (!ep.is_api) return false; }
+  else if (treeFilter === 'static') { if (!isStaticAsset(ep.url)) return false; }
+  else if (treeFilter === 'null')   { if (!isNullEndpoint(ep)) return false; }
+  else {
+    const s = node.status;
+    if (treeFilter === '2xx' && !(s >= 200 && s < 300)) return false;
+    if (treeFilter === '3xx' && !(s >= 300 && s < 400)) return false;
+    if (treeFilter === '4xx' && !(s >= 400 && s < 500)) return false;
+    if (treeFilter === '5xx' && !(s >= 500))             return false;
+  }
+  if (treeFiletype && !endpointMatchesFiletype(ep, treeFiletype)) return false;
   return true;
 }
 
@@ -3327,13 +3483,26 @@ function renderTree() {
 //  LOG STATE
 // ══════════════════════════════════════════
 let logFilter  = 'all';
+let logFiletype = null;
 let logSort    = { col: 'url', dir: 'asc' };
 let logCollapsed = {}; // domain → bool
 
 function setLogFilter(f, el) {
   logFilter = f;
-  document.querySelectorAll('.log-pill').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#log-filter-pills .log-pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
+  renderLog();
+}
+
+function setLogFiletype(ft, el) {
+  if (logFiletype === ft) {
+    logFiletype = null;
+    el.classList.remove('active');
+  } else {
+    logFiletype = ft;
+    document.querySelectorAll('#log-filetype-pills .log-pill').forEach(p => p.classList.remove('active'));
+    el.classList.add('active');
+  }
   renderLog();
 }
 
@@ -3342,14 +3511,17 @@ function setLogFilter(f, el) {
 // ══════════════════════════════════════════
 function logPassesFilter(ep, node) {
   if (!ep) return false;
-  if (logFilter === 'api')    return ep.is_api;
-  if (logFilter === 'static') return isStaticAsset(ep.url);
-  if (logFilter === 'null')   return isNullEndpoint(ep);
-  const s = node.status;
-  if (logFilter === '2xx') return s >= 200 && s < 300;
-  if (logFilter === '3xx') return s >= 300 && s < 400;
-  if (logFilter === '4xx') return s >= 400 && s < 500;
-  if (logFilter === '5xx') return s >= 500;
+  if (logFilter === 'api')    { if (!ep.is_api) return false; }
+  else if (logFilter === 'static') { if (!isStaticAsset(ep.url)) return false; }
+  else if (logFilter === 'null')   { if (!isNullEndpoint(ep)) return false; }
+  else {
+    const s = node.status;
+    if (logFilter === '2xx' && !(s >= 200 && s < 300)) return false;
+    if (logFilter === '3xx' && !(s >= 300 && s < 400)) return false;
+    if (logFilter === '4xx' && !(s >= 400 && s < 500)) return false;
+    if (logFilter === '5xx' && !(s >= 500))             return false;
+  }
+  if (logFiletype && !endpointMatchesFiletype(ep, logFiletype)) return false;
   return true;
 }
 
